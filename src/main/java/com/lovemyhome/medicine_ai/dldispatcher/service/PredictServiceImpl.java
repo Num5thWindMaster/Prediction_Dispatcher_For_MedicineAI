@@ -1,7 +1,6 @@
 package com.lovemyhome.medicine_ai.dldispatcher.service;// -*- coding: utf-8 -*-
 import com.lovemyhome.medicine_ai.dldispatcher.api.PredictService;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.SysRetCodeConstants;
-import com.lovemyhome.medicine_ai.dldispatcher.dao.ConfigurationDao;
 import com.lovemyhome.medicine_ai.dldispatcher.dao.PredictResponseBody;
 import com.lovemyhome.medicine_ai.dldispatcher.dao.UploadResponseBody;
 import lombok.extern.slf4j.Slf4j;
@@ -9,20 +8,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.yaml.snakeyaml.Yaml;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 import java.io.*;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Map;
+
 // @Author : HaiqingSun
 // @Time : 2023/7/21 12:14
-@Slf4j
 @Component
 @Service
+@Slf4j
 public class PredictServiceImpl implements PredictService {
 
     @Value("${file.uploadFolder}")
@@ -68,8 +63,8 @@ public class PredictServiceImpl implements PredictService {
             responseBody.setCode(SysRetCodeConstants.SUCCESS.getCode());
             responseBody.setFile(destFile);
         } catch (IOException e) {
-            log.error("File not found");
-            log.error(e.getMessage(), e);
+//            log.error("File not found");
+//            log.error(e.getMessage(), e);
             responseBody.setCode(SysRetCodeConstants.SYSTEM_ERROR.getCode());
         } finally {
             return responseBody;
@@ -128,7 +123,7 @@ public class PredictServiceImpl implements PredictService {
             URL path0 = ResourceUtils.getURL("classpath:static");
             String str1 = path0.getPath();
         } catch (FileNotFoundException e) {
-            log.error(e.getMessage());
+//            log.error(e.getMessage());
             responseBody.setCode(SysRetCodeConstants.SYSTEM_ERROR.getCode());
             return responseBody;
         }
@@ -152,14 +147,14 @@ public class PredictServiceImpl implements PredictService {
             int exitCode = process.waitFor();
             // 输出Python脚本的返回值
             String c = result.toString();
-            log.info("Python脚本返回值：" + c);
-            log.info("Python脚本执行状态：" + exitCode);
+//            log.info("Python脚本返回值：" + c);
+//            log.info("Python脚本执行状态：" + exitCode);
             responseBody.setCode(SysRetCodeConstants.SUCCESS.getCode());
             responseBody.setMsg("预测完成");
             responseBody.setProbability(c);
             responseBody.setSmiles(smiles);
         } catch (IOException | InterruptedException e) {
-            log.error(e.getMessage());
+//            log.error(e.getMessage());
             responseBody.setCode(SysRetCodeConstants.SYSTEM_ERROR.getCode());
         } finally {
             return responseBody;
@@ -169,10 +164,10 @@ public class PredictServiceImpl implements PredictService {
     public PredictResponseBody getPrediction(File file){
         try {
             String content = FileUtils.readFileToString(file, "UTF-8");
-            log.info("Smile get: " + content);
+//            log.info("Smile get: " + content);
             return getPrediction(content);
         } catch (IOException e) {
-            log.error(e.getMessage());
+//            log.error(e.getMessage());
             return null;
         }
     }

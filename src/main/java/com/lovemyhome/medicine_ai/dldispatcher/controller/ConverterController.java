@@ -7,11 +7,7 @@ import com.lovemyhome.medicine_ai.dldispatcher.commons.result.ResponseUtil;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.SysRetCodeConstants;
 import com.lovemyhome.medicine_ai.dldispatcher.dao.PredictResponseBody;
 import com.lovemyhome.medicine_ai.dldispatcher.dao.UploadResponseBody;
-import org.apache.dubbo.config.annotation.Reference;
-import com.lovemyhome.medicine_ai.dldispatcher.service.PredictServiceImpl;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,9 +15,9 @@ import java.util.Objects;
 
 // @Author : HaiqingSun
 // @Time : 2023/7/21 14:30
-@Slf4j
+
 @RestController
-@RequestMapping("/")
+@RequestMapping("/Prediction_Dispatcher_For_MedicineAI/request")
 public class ConverterController {
 
     PredictService predictService;
