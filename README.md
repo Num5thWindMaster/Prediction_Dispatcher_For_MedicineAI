@@ -1,0 +1,6 @@
+# Prediction_Dispatcher_For_MedicineAI
+本项目由JDK1.8编写
+需要java环境以及maven包管理器
+application.yml为通用配置文件，application-dev.yml为开发环境配置文件，application-web.yml为上线环境配置文件，按需修改
+需要编译成war包，在服务器上部署，并在部署后上传目标py文件到静态文件目录
+python文件用print输出目标结果，java会接受并给前端返回json，前端UI还有很大设计优化空间
