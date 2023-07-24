@@ -1,0 +1,12 @@
+spring:
+  profiles:
+    active: dev
+py:
+  module: "example.py"
+  function: "predict"
+server:
+  port: 8899
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
