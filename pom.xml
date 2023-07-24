@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.lovemyhome.medicine_ai</groupId>
-    <artifactId>DlDispatcher</artifactId>
+    <artifactId>Prediction_Dispatcher_For_MedicineAI</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>war</packaging>
     <name>DlDispatcher</name>
