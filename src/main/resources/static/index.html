@@ -2,15 +2,28 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <html>
 <head>
-    <title>Example</title>
+    <title>File Upload Example</title>
 </head>
 <body>
 <h2>上传Smile文件</h2>
 <h3>Please upload csv or txt file</h3>
-<form action="/Prediction_Dispatcher_For_MedicineAI/request/upload" method="post" enctype="multipart/form-data" onsubmit="return validateFileSize()">
+<form id="uploadForm" enctype="multipart/form-data" onsubmit="uploadFile(event)">
     <input type="file" name="file" id="fileInput" onchange="validateFileSelected()"/><br/><br/>
     <input type="submit" value="Submit" id="submitButton" disabled>
+    <button type="button" onclick="clearFile()">Clear</button>
 </form>
+<div>
+    <h2>Prediction Result</h2>
+    <div id="resultContainer">
+        <!-- Placeholder for displaying prediction result -->
+    </div>
+    <div id="errorContainer">
+        <!-- Placeholder for displaying error message -->
+    </div>
+</div>
+
+<button id="backToHome" onclick="redirectToHome()">Back to Home</button>
+
 <script>
     function validateFileSelected() {
         var fileInput = document.getElementById('fileInput');
@@ -23,101 +36,91 @@
             submitButton.disabled = true; // Disable the submit button
         }
     }
-</script>
-<script>
-    function validateFileSize() {
+
+    function clearFile() {
         var fileInput = document.getElementById('fileInput');
-        var maxSizeInBytes = 1024; // 10MB (in bytes)
-
-        if (fileInput.files.length > 0) {
-            var fileSize = fileInput.files[0].size;
-
-            if (fileSize > maxSizeInBytes) {
-                alert("File size exceeds the maximum limit (1KB).");
-                return false; // Prevent form submission
-            }
-        }
-        return true; // Allow form submission
+        fileInput.value = ''; // Clear the selected file
+        validateFileSelected(); // Update the submit button state
     }
-</script>
-<!--<script>-->
-<!--    // Sample ResponseData object received from backend-->
-<!--    -->
-<!--    -->
-<!--    var responseData = {-->
-<!--        success: false,-->
-<!--        message: "Invalid input.",-->
-<!--        code: 400,-->
-<!--        result: Object,-->
-<!--        timestamp: 1672814232987 // Replace this with the actual timestamp from backend-->
-<!--    };-->
 
-<!--    // Validate ResponseData and display error message if success is false-->
-<!--    if (!responseData.success) {-->
-<!--        var errorMessage = "Error: " + responseData.message + " (Error code: " + responseData.code + ")";-->
-<!--        var shouldRedirect = confirm(errorMessage);-->
-
-<!--        if (shouldRedirect) {-->
-<!--            window.location.href = "predict_index.html"; // Replace "predict_index.html" with your homepage URL-->
-<!--        }-->
-<!--    } else {-->
-
-<!--    }-->
-<!--</script>-->
-
-<h2>Prediction Result</h2>
-<div id="resultContainer">
-    <!-- Placeholder for displaying prediction result -->
-</div>
-<div id="errorContainer">
-    <!-- Placeholder for displaying error message -->
-</div>
-<button id="backToHome">Back to Home</button>
-
-<script>
-    // Sample ResponseData object received from backend
-    var responseData = {
-        success: true, // Replace this with the actual success value from backend
-        message: "Prediction successful.",
-        code: 200,
-        result: {
-            smiles: "C1=CC=CC=C1",
-            probability: "0.87"
-        },
-        timestamp: 1672814232987 // Replace this with the actual timestamp from backend
-    };
-
-    // Validate ResponseData and show result or error message
-    if (responseData.success) {
-        // Show result in new page
+    function updateResultContainer(data) {
         var resultContainer = document.getElementById('resultContainer');
-        resultContainer.innerHTML = `
-                <p><strong>SMILES:</strong> ${responseData.result.smiles}</p>
-                <p><strong>Probability:</strong> ${responseData.result.probability}</p>
-            `;
-    } else {
-        // Show error message and redirect to homepage after confirmation
-        var errorContainer = document.getElementById('errorContainer');
-        errorContainer.innerText = `Error: ${responseData.message} (Error code: ${responseData.code})`;
+        var resultTextBox = document.getElementById('resultTextBox');
 
-        // Redirect to homepage on button click
-        var backButton = document.getElementById('backToHome');
-        backButton.addEventListener('click', function () {
-            var confirmed = confirm("Are you sure you want to go back to homepage?");
-            if (confirmed) {
-                window.location.href = "index.html"; // Replace "predict_index.html" with your homepage URL
-            }
-        });
+        if (!resultTextBox) {
+            // If resultTextBox doesn't exist, create a new one
+            resultTextBox = document.createElement('textarea');
+            resultTextBox.id = 'resultTextBox';
+            resultTextBox.rows = 5;
+            resultTextBox.cols = 50;
+            resultContainer.appendChild(resultTextBox);
+        }
+
+        if (data.code === 200) {
+            // Show result in the text box
+            // resultTextBox.innerHTML = JSON.stringify(data.result);
+            resultTextBox.innerHTML = `Probability: ${JSON.stringify(data.result.probability)}\nSmiles: ${JSON.stringify(data.result.smiles)}`;
+        } else {
+            // Show error message
+            resultTextBox.innerHTML = `Error: ${data.message} (Error code: ${data.code})`;
+        }
     }
+
+    function uploadFile(event) {
+        event.preventDefault(); // Prevent the default form submission
+        var fileInput = document.getElementById('fileInput');
+        var file = fileInput.files[0];
+
+        // Check if a file is selected
+        if (!file) {
+            alert('Please select a file.');
+            return;
+        }
+
+        // Check file extension
+        var allowedExtensions = ['.csv', '.txt'];
+        var fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        if (!allowedExtensions.includes(fileExtension)) {
+            alert('Only .csv or .txt files are allowed.');
+            return;
+        }
+
+        // Check file size
+        var maxSizeInBytes = 1024; // 1KB (in bytes)
+        if (file.size > maxSizeInBytes) {
+            alert('File size exceeds the maximum limit (1KB).');
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        // Replace the URL below with your backend endpoint for file upload
+        var uploadURL = './request/upload';
+
+        fetch(uploadURL, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                updateResultContainer(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    function redirectToHome() {
+         // Replace with your home page URL
+        window.location.href = "/";
+    }
+
+    var submitButton = document.getElementById('submitButton');
+    submitButton.addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+        uploadFile(event);
+    });
 </script>
 </body>
 </html>
-<!--在这个示例中，我们在<form>标签中添加了onsubmit="return validateFile()"，以便在表单提交之前调用validateFile()函数来验证文件大小。如果文件大小超过10MB，将会显示警告弹窗并阻止表单提交，否则表单会正常提交，将文件上传到后端服务器进行后续处理。-->
-
-<!--    请注意，前端的文件大小验证只是为了增加用户体验和额外的安全层，后端服务器仍然应该对上传的文件进行验证。在Spring中，你可以通过配置MultipartResolver来限制文件大小。在Spring Boot中，你可以通过spring.servlet.multipart.max-file-size和spring.servlet.multipart.max-request-size属性来设置最大文件大小和请求大小限制。这样可以确保在后端也进行了文件大小的限制，防止潜在的安全问题。-->
-
-
-
-
-
-

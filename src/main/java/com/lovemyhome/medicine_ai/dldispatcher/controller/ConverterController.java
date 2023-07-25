@@ -17,7 +17,7 @@ import java.util.Objects;
 // @Time : 2023/7/21 14:30
 
 @RestController
-@RequestMapping("/Prediction_Dispatcher_For_MedicineAI/request")
+@RequestMapping("/request")
 public class ConverterController {
 
     PredictService predictService;
@@ -39,7 +39,7 @@ public class ConverterController {
         if (!Objects.equals(uploadResponseBody.getCode(), "000000")) {
             return new ResponseUtil<>().setErrorMsg(500, SysRetCodeConstants.getMessage(uploadResponseBody.getCode()));//501上传错误，502格式错误，500系统错误
         }
-        PredictResponseBody responseBody = predictService.getPrediction(uploadResponseBody.getFile());
+        PredictResponseBody responseBody = predictService.getPrediction(uploadResponseBody.getPath());
         if (Objects.equals(responseBody.getCode(), SysRetCodeConstants.SUCCESS.getCode())){
             return new ResponseUtil<>().setData(responseBody);
         }

@@ -5,6 +5,7 @@ import com.lovemyhome.medicine_ai.dldispatcher.dao.UploadResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.nio.file.Path;
 
 // @Author : HaiqingSun
 // @Time : 2023/7/24 3:02
@@ -13,5 +14,5 @@ public interface PredictService {
 
     PredictResponseBody getPrediction(String smile);
 
-    PredictResponseBody getPrediction(File file);
+    PredictResponseBody getPrediction(Path path);
 }

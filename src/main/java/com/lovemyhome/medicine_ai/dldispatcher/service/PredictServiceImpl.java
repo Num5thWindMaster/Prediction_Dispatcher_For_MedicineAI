@@ -3,7 +3,6 @@ import com.lovemyhome.medicine_ai.dldispatcher.api.PredictService;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.SysRetCodeConstants;
 import com.lovemyhome.medicine_ai.dldispatcher.dao.PredictResponseBody;
 import com.lovemyhome.medicine_ai.dldispatcher.dao.UploadResponseBody;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
@@ -12,12 +11,16 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 // @Author : HaiqingSun
 // @Time : 2023/7/21 12:14
 @Component
 @Service
-@Slf4j
 public class PredictServiceImpl implements PredictService {
 
     @Value("${file.uploadFolder}")
@@ -53,18 +56,16 @@ public class PredictServiceImpl implements PredictService {
         try {
             path2 = ResourceUtils.getURL("classpath:static").getPath().replaceFirst("^/+", "") ;
             dirPath = path2 + dir;
-            File directory = new File(dirPath);
-            if (!directory.isDirectory()){
-                directory.mkdirs();
-            }
+            Files.createDirectories(Paths.get(dirPath));
             String dirPath2 =dirPath + "/" + System.currentTimeMillis() + file.getName();
-            File destFile = new File(dirPath2);
-            file.transferTo(destFile);
+            Path path = Files.createFile(Paths.get(dirPath2));
+            file.transferTo(path);
             responseBody.setCode(SysRetCodeConstants.SUCCESS.getCode());
-            responseBody.setFile(destFile);
+            responseBody.setPath(path);
         } catch (IOException e) {
 //            log.error("File not found");
 //            log.error(e.getMessage(), e);
+            e.printStackTrace();
             responseBody.setCode(SysRetCodeConstants.SYSTEM_ERROR.getCode());
         } finally {
             return responseBody;
@@ -161,9 +162,15 @@ public class PredictServiceImpl implements PredictService {
         }
     }
     @Override
-    public PredictResponseBody getPrediction(File file){
+    public PredictResponseBody getPrediction(Path path){
         try {
-            String content = FileUtils.readFileToString(file, "UTF-8");
+            BufferedReader bfr = Files.newBufferedReader(path, UTF_8);
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while((line = bfr.readLine()) != null){
+                sb.append(line);
+            }
+            String content = sb.toString();
 //            log.info("Smile get: " + content);
             return getPrediction(content);
         } catch (IOException e) {

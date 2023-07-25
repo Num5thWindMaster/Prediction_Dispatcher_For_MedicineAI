@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<html>
+<head>
+    <title>Example</title>
+</head>
+<body>
+<h2>上传Smile文件</h2>
+<h3>Please upload csv or txt file</h3>
+<form action="./request/upload" method="post" enctype="multipart/form-data" onsubmit="return validateFileSize()">
+    <input type="file" name="file" id="fileInput" onchange="validateFileSelected()"/><br/><br/>
+    <input type="submit" value="Submit" id="submitButton" disabled>
+</form>
+<script>
+    function validateFileSelected() {
+        var fileInput = document.getElementById('fileInput');
+        var submitButton = document.getElementById('submitButton');
+
+        // Check if a file is selected
+        if (fileInput.files.length > 0) {
+            submitButton.disabled = false; // Enable the submit button
+        } else {
+            submitButton.disabled = true; // Disable the submit button
+        }
+    }
+</script>
+<script>
+    function validateFileSize() {
+        var fileInput = document.getElementById('fileInput');
+        var maxSizeInBytes = 1024; // 10MB (in bytes)
+
+        if (fileInput.files.length > 0) {
+            var fileSize = fileInput.files[0].size;
+
+            if (fileSize > maxSizeInBytes) {
+                alert("File size exceeds the maximum limit (1KB).");
+                return false; // Prevent form submission
+            }
+        }
+        return true; // Allow form submission
+    }
+</script>
+
+<h2>Prediction Result</h2>
+<div id="resultContainer">
+    <!-- Placeholder for displaying prediction result -->
+</div>
+<div id="errorContainer">
+    <!-- Placeholder for displaying error message -->
+</div>
+<button id="backToHome">Back to Home</button>
+
+<script>
+    // Sample ResponseData object received from backend
+    var responseData = {
+        success: true, // Replace this with the actual success value from backend
+        message: "Prediction successful.",
+        code: 200,
+        result: {
+            smiles: "C1=CC=CC=C1",
+            probability: "0.87"
+        },
+        timestamp: 1672814232987 // Replace this with the actual timestamp from backend
+    };
+
+    // Validate ResponseData and show result or error message
+    if (responseData.success) {
+        // Show result in new page
+        var resultContainer = document.getElementById('resultContainer');
+        resultContainer.innerHTML = `
+                <p><strong>SMILES:</strong> ${responseData.result.smiles}</p>
+                <p><strong>Probability:</strong> ${responseData.result.probability}</p>
+            `;
+    } else {
+        // Show error message and redirect to homepage after confirmation
+        var errorContainer = document.getElementById('errorContainer');
+        errorContainer.innerText = `Error: ${responseData.message} (Error code: ${responseData.code})`;
+
+        // Redirect to homepage on button click
+        var backButton = document.getElementById('backToHome');
+        backButton.addEventListener('click', function () {
+            var confirmed = confirm("Are you sure you want to go back to homepage?");
+            if (confirmed) {
+                window.location.href = "../../../../../../main/webapp/predict_index.html"; // Replace "predict_index.html" with your homepage URL
+            }
+        });
+    }
+</script>
+</body>
+</html>
+
+
+
