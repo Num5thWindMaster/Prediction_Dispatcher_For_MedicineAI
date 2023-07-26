@@ -7,13 +7,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -31,6 +32,11 @@ public class PredictServiceImpl implements PredictService {
     private String pyModule;
     @Value("${py.function}")
     private String pyFunc;
+    private final String baseDir;
+    private static final Logger LOGGER = Logger.getLogger(PredictServiceImpl.class.getName());
+    public PredictServiceImpl() {
+        baseDir = System.getProperty("user.dir");
+    }
 //    private static ConfigurationDao configurationDao = new ConfigurationDao();
 
     @Override
@@ -54,8 +60,10 @@ public class PredictServiceImpl implements PredictService {
         String path2 = null;
         String dirPath = null;
         try {
-            path2 = ResourceUtils.getURL("classpath:static").getPath().replaceFirst("^/+", "") ;
-            dirPath = path2 + dir;
+//            path2 = ResourceUtils.getURL("classpath:static").getPath().replaceFirst("^/+", "") ;
+//            dirPath = path2 + dir;
+            LOGGER.log(Level.INFO, "WorkSpace path: " + System.getProperty("user.dir"));
+            dirPath =baseDir + dir;
             Files.createDirectories(Paths.get(dirPath));
             String dirPath2 =dirPath + "/" + System.currentTimeMillis() + file.getName();
             Path path = Files.createFile(Paths.get(dirPath2));
@@ -65,6 +73,7 @@ public class PredictServiceImpl implements PredictService {
         } catch (IOException e) {
 //            log.error("File not found");
 //            log.error(e.getMessage(), e);
+            LOGGER.log(Level.SEVERE, "error raised!!!",e);
             e.printStackTrace();
             responseBody.setCode(SysRetCodeConstants.SYSTEM_ERROR.getCode());
         } finally {
@@ -120,9 +129,10 @@ public class PredictServiceImpl implements PredictService {
         //未做Smiles序列验证逻辑
         String path = null;
         try {
-            path = ResourceUtils.getURL("classpath:static").getPath().replaceFirst("^/+", "") + pythonFolder;
-            URL path0 = ResourceUtils.getURL("classpath:static");
-            String str1 = path0.getPath();
+            path = (ResourceUtils.getURL("classpath:static").getPath().startsWith("/var")? ResourceUtils.getURL("classpath:static").getPath() : ResourceUtils.getURL("classpath:static").getPath().replaceFirst("/","") ) + pythonFolder;
+            LOGGER.log(Level.INFO, "Resource Check: " + path);
+//            URL path0 = ResourceUtils.getURL("classpath:static");
+//            String str1 = path0.getPath();
         } catch (FileNotFoundException e) {
 //            log.error(e.getMessage());
             responseBody.setCode(SysRetCodeConstants.SYSTEM_ERROR.getCode());

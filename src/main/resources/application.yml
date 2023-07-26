@@ -1,12 +1,15 @@
 spring:
   profiles:
     active: dev
+# active设置环境，若在开发环境（包括windows版tomcat）下测试则设为dev，若打包上线则改成web后打包
 py:
   module: "example.py"
   function: "predict"
+# 执行的py脚本参数，py脚本放在静态目录python文件夹后打包
 server:
   port: 8899
   servlet:
     encoding:
       charset: UTF-8
       enabled: true
+# 设置服务器常见参数
