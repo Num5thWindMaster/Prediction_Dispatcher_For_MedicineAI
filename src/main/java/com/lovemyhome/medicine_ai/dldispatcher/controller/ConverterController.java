@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 
 // @Author : HaiqingSun
@@ -28,7 +29,7 @@ public class ConverterController {
     }
 
     @PostMapping("/upload")
-    public ResponseData uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseData uploadFile(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
         if (Objects.equals(file, null)){
             return new ResponseUtil<>().setErrorMsg("未选择文件，请重新选择文件上传");
         }
@@ -40,6 +41,15 @@ public class ConverterController {
             return new ResponseUtil<>().setErrorMsg(500, SysRetCodeConstants.getMessage(uploadResponseBody.getCode()));//501上传错误，502格式错误，500系统错误
         }
         PredictResponseBody responseBody = predictService.getPrediction(uploadResponseBody.getPath());
+        if (Objects.equals(responseBody.getCode(), SysRetCodeConstants.SUCCESS.getCode())){
+            return new ResponseUtil<>().setData(responseBody);
+        }
+        return new ResponseUtil<>().setErrorMsg(SysRetCodeConstants.getMessage(responseBody.getCode()));
+
+    }
+    @GetMapping("/submit")
+    public ResponseData submitSmiles(@RequestParam("smiles")String smiles, HttpServletRequest request){
+        PredictResponseBody responseBody = predictService.getPrediction(smiles);
         if (Objects.equals(responseBody.getCode(), SysRetCodeConstants.SUCCESS.getCode())){
             return new ResponseUtil<>().setData(responseBody);
         }

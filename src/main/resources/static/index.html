@@ -5,13 +5,18 @@
     <title>File Upload Example</title>
 </head>
 <body>
-<h2>上传Smile文件</h2>
-<h3>Please upload csv or txt file</h3>
+<h2>Predict for blabla...</h2>
+<h3>Please upload csv or txt file:</h3>
 <form id="uploadForm" enctype="multipart/form-data" onsubmit="uploadFile(event)">
     <input type="file" name="file" id="fileInput" onchange="validateFileSelected()"/><br/><br/>
     <input type="submit" value="Submit" id="submitButton" disabled>
     <button type="button" onclick="clearFile()">Clear</button>
 </form>
+<div>
+    <h3>or, please input smiles text: </h3>
+    <input type="text" id="dataInput" placeholder="Enter data here">
+    <button type="button" onclick="submitData()">Submit Data</button>
+</div>
 <div>
     <h2>Prediction Result</h2>
     <div id="resultContainer">
@@ -59,10 +64,10 @@
         if (data.code === 200) {
             // Show result in the text box
             // resultTextBox.innerHTML = JSON.stringify(data.result);
-            resultTextBox.innerHTML = `Probability: ${JSON.stringify(data.result.probability)}\nSmiles: ${JSON.stringify(data.result.smiles)}`;
+            resultTextBox.innerHTML = `Probability: ${JSON.stringify(data.result.probability)}\nSmiles: ${JSON.stringify(data.result.smiles)}\nTime: ${timestampToLocalTime(data.timestamp)}`;
         } else {
             // Show error message
-            resultTextBox.innerHTML = `Error: ${data.message} (Error code: ${data.code})`;
+            resultTextBox.innerHTML = `Error: ${data.message} (Error code: ${data.code})\nTime: ${timestampToLocalTime(data.timestamp)}`;
         }
     }
 
@@ -114,6 +119,51 @@
     function redirectToHome() {
          // Replace with your home page URL
         window.location.href = "/";
+    }
+    function submitData() {
+        var dataInput = document.getElementById('dataInput');
+        var data = dataInput.value.trim();
+
+        // Check if data is not empty
+        if (!data) {
+            alert('Please enter data.');
+            return;
+        }
+
+        // Check data length
+        var maxSizeInBytes = 1024; // 1KB (in bytes)
+        if (new Blob([data]).size > maxSizeInBytes) {
+            alert('Data size exceeds the maximum limit (1KB).');
+            return;
+        }
+
+        // Replace the URL below with your backend endpoint for data submission
+        var submitURL = './request/submit';
+
+        // Use GET request to send data
+        fetch(`${submitURL}?smiles=${encodeURIComponent(data)}`)
+            .then(response => response.json())
+            .then(data => {
+                updateResultContainer(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    function timestampToLocalTime(timestamp) {
+        const dateObj = new Date(timestamp);
+        const options = {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false, // Use 24-hour format
+        };
+
+        return dateObj.toLocaleString('zh-CN', options);
     }
 
     var submitButton = document.getElementById('submitButton');

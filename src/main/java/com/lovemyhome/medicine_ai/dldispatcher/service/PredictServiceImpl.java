@@ -3,19 +3,21 @@ import com.lovemyhome.medicine_ai.dldispatcher.api.PredictService;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.SysRetCodeConstants;
 import com.lovemyhome.medicine_ai.dldispatcher.dao.PredictResponseBody;
 import com.lovemyhome.medicine_ai.dldispatcher.dao.UploadResponseBody;
+import org.openscience.cdk.DefaultChemObjectBuilder;
+import org.openscience.cdk.interfaces.IAtomContainer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.stereotype.Service;
 import java.io.*;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import org.openscience.cdk.smiles.SmilesParser;
+import org.openscience.cdk.exception.InvalidSmilesException;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 // @Author : HaiqingSun
@@ -34,6 +36,16 @@ public class PredictServiceImpl implements PredictService {
     private String pyFunc;
     private final String baseDir;
     private static final Logger LOGGER = Logger.getLogger(PredictServiceImpl.class.getName());
+    private static boolean isValidSmiles(String smilesString) {
+        SmilesParser smilesParser = new SmilesParser(DefaultChemObjectBuilder.getInstance());
+        try {
+            // Try to parse the SMILES string
+            IAtomContainer iAtomContainer = smilesParser.parseSmiles(smilesString);
+            return true; // If parsing succeeds, the string is a valid SMILES sequence
+        } catch (InvalidSmilesException e) {
+            return false; // If parsing fails, the string is not a valid SMILES sequence
+        }
+    }
     public PredictServiceImpl() {
         baseDir = System.getProperty("user.dir");
     }
@@ -58,7 +70,7 @@ public class PredictServiceImpl implements PredictService {
 
 
         String path2 = null;
-        String dirPath = null;
+        String dirPath;
         try {
 //            path2 = ResourceUtils.getURL("classpath:static").getPath().replaceFirst("^/+", "") ;
 //            dirPath = path2 + dir;
@@ -118,15 +130,12 @@ public class PredictServiceImpl implements PredictService {
     @Override
     public PredictResponseBody getPrediction(String smiles){
         PredictResponseBody responseBody = new PredictResponseBody();
-//        SmilesParserWrapper smilesParser = new SmilesParserWrapper();
-//        try {
-//            smilesParser.parseSmiles(smiles);
-//            return true;
-//        } catch (CDKException e) {
-//            // 如果SMILES序列不合法，将会抛出CDKException异常
-//            return false;
-//        }
-        //未做Smiles序列验证逻辑
+        if(null == smiles || !isValidSmiles(smiles)) {
+            responseBody.setCode(SysRetCodeConstants.REQUEST_FORMAT_ILLEGAL.getCode());
+            responseBody.setMsg("不是有效的Smiles数据");
+            return  responseBody;
+        }
+        //Smiles有效性检测
         String path = null;
         try {
             path = (ResourceUtils.getURL("classpath:static").getPath().startsWith("/var")? ResourceUtils.getURL("classpath:static").getPath() : ResourceUtils.getURL("classpath:static").getPath().replaceFirst("/","") ) + pythonFolder;
