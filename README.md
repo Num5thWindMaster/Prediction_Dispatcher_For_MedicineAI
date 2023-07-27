@@ -7,7 +7,7 @@
 
 ### application.yml为通用配置文件，每次构建均需要确认其中信息；application-dev.yml为开发环境配置文件，application-web.yml为上线环境配置文件，后续按需修改  
 
-### 需要编译成war包，在服务器上部署，可以直接在静态目录python文件夹下放入py文件后构建，也可以在部署后上传目标py文件到静态文件目录，注意模块名需要和application.yml设置的保持一致 
+### 需要编译成war包，在服务器上部署，可以直接在静态目录python文件夹下放入py文件后构建，也可以在部署后上传目标py文件到private文件目录，注意模块名需要和application.yml设置的保持一致 
 
 ### python文件用print输出目标结果，java会接受结果并给前端返回json，前端UI还有很大设计优化空间  
 
@@ -43,5 +43,7 @@
 4. 添加了smiles序列校验
 ## next：  
 1. 完善404网页    
-2. 改善UI美观度  
+2. 改善UI美观度
+3. 完善日志系统
+4. 某些静态文件私密性改善
   
