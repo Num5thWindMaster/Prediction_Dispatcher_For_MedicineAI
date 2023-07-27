@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.lovemyhome.medicine_ai</groupId>
     <artifactId>Prediction_Dispatcher_For_MedicineAI</artifactId>
-    <version>0.9.9</version>
+    <version>1.0.0</version>
     <packaging>war</packaging>
     <name>DlDispatcher</name>
     <description>DlDispatcher</description>

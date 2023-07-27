@@ -2,131 +2,34 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <html>
 <head>
-    <title>Use Our Model To Predict Your Component</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-color: #F5F5DC;
-            background-image: url("./pic/background.jpg");
-            color: #000; /* Black text color */
-        }
-
-        h2, h3 {
-            color: #007bff; /* Blue headers */
-        }
-
-        /* Center align all div elements */
-        div {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-
-        /* File upload section */
-        #uploadForm, #dataInputForm {
-            margin: 20px;
-        }
-
-        #fileInput, #dataInput {
-            margin: 10px;
-        }
-
-        #submitButton, #uploadFormButton, #submitDataButton {
-            margin: 10px;
-            background-color: #007bff; /* Blue submit buttons */
-            color: #fff; /* White text color */
-            padding: 10px;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        #submitButton:disabled, #submitDataButton:disabled {
-            background-color: #b0cfff; /* Light blue disabled buttons */
-            cursor: not-allowed;
-        }
-
-        #resultContainer {
-            margin: 20px;
-            padding: 10px;
-            background-color: #fff; /* White result container background */
-            border-radius: 5px;
-        }
-
-        /*#errorContainer {*/
-        /*    margin: 20px;*/
-        /*    padding: 10px;*/
-        /*    background-color: #ffc0cb; !* Light pink error container background *!*/
-        /*    border-radius: 5px;*/
-        /*}*/
-
-        #backToHome {
-            margin: 20px;
-            padding: 10px;
-            background-color: #007bff; /* Blue back to home button */
-            color: #fff; /* White text color */
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        /* Responsive layout for small screens */
-        @media screen and (max-width: 600px) {
-            #fileInput, #dataInput {
-                width: 80%;
-            }
-            #submitButton, #submitDataButton {
-                width: 80%;
-            }
-            #resultContainer, #errorContainer {
-                width: 90%;
-            }
-            #backToHome {
-                width: 90%;
-            }
-        }
-        .right-bottom-div {
-            position: absolute;
-            bottom: 10px; /* Distance from bottom edge */
-            right: 10px; /* Distance from right edge */
-            background-color: #336699; /* 蓝色背景，可根据需要更改颜色 */
-            color: #FFFFFF; /* White text color */
-            padding: 10px;
-            border-radius: 5px;
-        }
-    </style>
+    <title>File Upload Example</title>
 </head>
 <body>
-<h2 style="text-align: center">Predict for blabla...</h2>
-<h3 style="text-align: center">Please upload csv or txt file:</h3>
-<form id="uploadForm" enctype="multipart/form-data" style="text-align: center" onsubmit="uploadFile(event)">
-    <input type="file" name="file" class="file-input" id="fileInput" onchange="validateFileSelected()"/>
+<h2>Predict for blabla...</h2>
+<h3>Please upload csv or txt file:</h3>
+<form id="uploadForm" enctype="multipart/form-data" onsubmit="uploadFile(event)">
+    <input type="file" name="file" id="fileInput" onchange="validateFileSelected()"/><br/><br/>
     <input type="submit" value="Submit" id="submitButton" disabled>
-    <button type="button" id="uploadFormButton" onclick="clearFile()">Clear</button>
+    <button type="button" onclick="clearFile()">Clear</button>
 </form>
 <div>
     <h3>or, please input smiles text: </h3>
     <input type="text" id="dataInput" placeholder="Enter data here">
-    <button type="button" id="submitDataButton" onclick="submitData()">Submit Data</button>
+    <button type="button" onclick="submitData()">Submit Data</button>
 </div>
 <div>
-    <h2 style="text-align: center">Prediction Result</h2>
+    <h2>Prediction Result</h2>
     <div id="resultContainer">
         <!-- Placeholder for displaying prediction result -->
     </div>
-<!--    <div id="errorContainer">-->
-<!--        &lt;!&ndash; Placeholder for displaying error message &ndash;&gt;-->
-<!--    </div>-->
+    <div id="errorContainer">
+        <!-- Placeholder for displaying error message -->
+    </div>
 </div>
-<div>
-    <button class="right-bottom-div" id="backToHome" onclick="redirectToHome()" >Back to Home</button>
-</div>
-<script>
 
+<button id="backToHome" onclick="redirectToHome()">Back to Home</button>
+
+<script>
     function validateFileSelected() {
         var fileInput = document.getElementById('fileInput');
         var submitButton = document.getElementById('submitButton');

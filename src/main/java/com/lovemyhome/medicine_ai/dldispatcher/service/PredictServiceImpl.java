@@ -85,7 +85,7 @@ public class PredictServiceImpl implements PredictService {
         } catch (IOException e) {
 //            log.error("File not found");
 //            log.error(e.getMessage(), e);
-            LOGGER.log(Level.SEVERE, "error raised!!!",e);
+            LOGGER.log(Level.SEVERE, "Smiles File IOException.");
             e.printStackTrace();
             responseBody.setCode(SysRetCodeConstants.SYSTEM_ERROR.getCode());
         } finally {
@@ -138,8 +138,8 @@ public class PredictServiceImpl implements PredictService {
         //Smiles有效性检测
         String path = null;
         try {
-            path = (ResourceUtils.getURL("classpath:static").getPath().startsWith("/var")? ResourceUtils.getURL("classpath:static").getPath() : ResourceUtils.getURL("classpath:static").getPath().replaceFirst("/","") ) + pythonFolder;
-            LOGGER.log(Level.INFO, "Resource Check: " + path);
+            path = (ResourceUtils.getURL("classpath:private").getPath().startsWith("/var")? ResourceUtils.getURL("classpath:private").getPath() : ResourceUtils.getURL("classpath:private").getPath().replaceFirst("/","") ) + pythonFolder;
+//            LOGGER.log(Level.INFO, "Resource Check: " + path);
 //            URL path0 = ResourceUtils.getURL("classpath:static");
 //            String str1 = path0.getPath();
         } catch (FileNotFoundException e) {
@@ -174,7 +174,7 @@ public class PredictServiceImpl implements PredictService {
             responseBody.setProbability(c);
             responseBody.setSmiles(smiles);
         } catch (IOException | InterruptedException e) {
-//            log.error(e.getMessage());
+            LOGGER.log(Level.SEVERE, e.getMessage());
             responseBody.setCode(SysRetCodeConstants.SYSTEM_ERROR.getCode());
         } finally {
             return responseBody;
@@ -193,7 +193,7 @@ public class PredictServiceImpl implements PredictService {
 //            log.info("Smile get: " + content);
             return getPrediction(content);
         } catch (IOException e) {
-//            log.error(e.getMessage());
+            LOGGER.log(Level.SEVERE, e.getMessage());
             return null;
         }
     }

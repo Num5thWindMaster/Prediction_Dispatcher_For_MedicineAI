@@ -7,7 +7,7 @@ py:
   function: "predict"
 # 执行的py脚本参数，py脚本放在静态目录python文件夹后打包
 server:
-  port: 8899
+  port: 18890
   servlet:
     encoding:
       charset: UTF-8
