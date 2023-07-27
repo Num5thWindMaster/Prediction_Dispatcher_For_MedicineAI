@@ -18,6 +18,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.openscience.cdk.smiles.SmilesParser;
 import org.openscience.cdk.exception.InvalidSmilesException;
+
+import javax.servlet.http.HttpServletRequest;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 // @Author : HaiqingSun
@@ -52,7 +55,7 @@ public class PredictServiceImpl implements PredictService {
 //    private static ConfigurationDao configurationDao = new ConfigurationDao();
 
     @Override
-    public UploadResponseBody getUploadedFile(MultipartFile file){
+    public UploadResponseBody getUploadedFile(MultipartFile file, HttpServletRequest request){
         String name = file.getOriginalFilename();
         UploadResponseBody responseBody = new UploadResponseBody();
         if (name == null){//空
@@ -77,7 +80,7 @@ public class PredictServiceImpl implements PredictService {
             LOGGER.log(Level.INFO, "WorkSpace path: " + System.getProperty("user.dir"));
             dirPath =baseDir + dir;
             Files.createDirectories(Paths.get(dirPath));
-            String dirPath2 =dirPath + "/" + System.currentTimeMillis() + file.getName();
+            String dirPath2 =dirPath + "/" + System.currentTimeMillis() + "_" + request.getRemoteHost() + "_" + request.getRemotePort() + ".csv";
             Path path = Files.createFile(Paths.get(dirPath2));
             file.transferTo(path);
             responseBody.setCode(SysRetCodeConstants.SUCCESS.getCode());

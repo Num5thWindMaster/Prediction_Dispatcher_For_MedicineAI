@@ -36,7 +36,7 @@ public class ConverterController {
         if (file.getSize() > 1024) {
             return new ResponseUtil<>().setErrorMsg("文件过大，请检查");
         }
-        UploadResponseBody uploadResponseBody = predictService.getUploadedFile(file);
+        UploadResponseBody uploadResponseBody = predictService.getUploadedFile(file, request);
         if (!Objects.equals(uploadResponseBody.getCode(), "000000")) {
             return new ResponseUtil<>().setErrorMsg(500, SysRetCodeConstants.getMessage(uploadResponseBody.getCode()));//501上传错误，502格式错误，500系统错误
         }
