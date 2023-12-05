@@ -1,3 +1,5 @@
 file:
   uploadFolder: /work/web/upload #上传文件被映射到Ubuntu系统的 /var/cache/tomcat9/web目录下（沙盒机制）
-  pythonFolder: python #web中仅使用，不建议上传或修改
+  pythonFolder: /opt/tomcat/webapps/Prediction_Dispatcher_For_MedicineAI/WEB-INF/classes/private/MF-MPR
+  model_pt: Src_model.pt
+  #web中仅使用，不建议上传或修改

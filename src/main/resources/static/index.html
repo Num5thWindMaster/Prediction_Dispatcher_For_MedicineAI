@@ -55,6 +55,7 @@
             padding: 10px;
             background-color: #fff; /* White result container background */
             border-radius: 5px;
+            font-family: "Microsoft YaHei", sans-serif;
         }
 
         /*#errorContainer {*/
@@ -98,19 +99,24 @@
             padding: 10px;
             border-radius: 5px;
         }
+        #smilesInput, #sequenceInput {
+            width: 400px;
+            height: 30px;
+        }
     </style>
 </head>
 <body>
-<h2 style="text-align: center">Predict for blabla...</h2>
-<h3 style="text-align: center">Please upload csv or txt file:</h3>
+<h2 style="text-align: center">Predict for LYN target molecule</h2>
+<h3 style="text-align: center">Please upload csv file, using ',' as the seperator:</h3>
 <form id="uploadForm" enctype="multipart/form-data" style="text-align: center" onsubmit="uploadFile(event)">
     <input type="file" name="file" class="file-input" id="fileInput" onchange="validateFileSelected()"/>
     <input type="submit" value="Submit" id="submitButton" disabled>
     <button type="button" id="uploadFormButton" onclick="clearFile()">Clear</button>
 </form>
 <div>
-    <h3>or, please input smiles text: </h3>
-    <input type="text" id="dataInput" placeholder="Enter data here">
+    <h3>or, please input a SMILES sequence: </h3>
+    <input type="text" id="smilesInput" placeholder="Enter SMILES here">
+    <!--    <input type="text" id="sequenceInput" placeholder="Enter target sequence here, default Lyn">-->
     <button type="button" id="submitDataButton" onclick="submitData()">Submit Data</button>
 </div>
 <div>
@@ -118,9 +124,9 @@
     <div id="resultContainer">
         <!-- Placeholder for displaying prediction result -->
     </div>
-<!--    <div id="errorContainer">-->
-<!--        &lt;!&ndash; Placeholder for displaying error message &ndash;&gt;-->
-<!--    </div>-->
+    <!--    <div id="errorContainer">-->
+    <!--        &lt;!&ndash; Placeholder for displaying error message &ndash;&gt;-->
+    <!--    </div>-->
 </div>
 <div>
     <button class="right-bottom-div" id="backToHome" onclick="redirectToHome()" >Back to Home</button>
@@ -161,7 +167,18 @@
         if (data.code === 200) {
             // Show result in the text box
             // resultTextBox.innerHTML = JSON.stringify(data.result);
-            resultTextBox.innerHTML = `Probability: ${JSON.stringify(data.result.probability)}\nSmiles: ${JSON.stringify(data.result.smiles)}\nTime: ${timestampToLocalTime(data.timestamp)}`;
+            let resultInfo = "";
+
+            for (let i = 0; i < data.result.length; i++) {
+                const resultItem = data.result[i];
+                resultInfo += `Pair ${i + 1}:\n`;
+                resultInfo += `Score: ${resultItem.probability}\n`;
+                resultInfo += `Smiles: ${resultItem.smiles}\n`;
+                resultInfo += `Target: ${resultItem.targetName}\n\n`;
+            }
+
+            resultTextBox.innerHTML = resultInfo + `Time: ${timestampToLocalTime(data.timestamp)}`;
+            // resultTextBox.innerHTML = `Probability: ${JSON.stringify(data.result[0].probability)}\nSmiles: ${JSON.stringify(data.result[0].smiles)}\ntarget sequence: ${JSON.stringify(data.result[0].sequence)}\nTime: ${timestampToLocalTime(data.timestamp)}`;
         } else {
             // Show error message
             resultTextBox.innerHTML = `Error: ${data.message} (Error code: ${data.code})\nTime: ${timestampToLocalTime(data.timestamp)}`;
@@ -214,22 +231,27 @@
     }
 
     function redirectToHome() {
-         // Replace with your home page URL
+        // Replace with your home page URL
         window.location.href = "/";
     }
     function submitData() {
-        var dataInput = document.getElementById('dataInput');
-        var data = dataInput.value.trim();
+        var smilesInput = document.getElementById('smilesInput');
+        // var sequenceInput = document.getElementById('sequenceInput');
+        var smiles = smilesInput.value.trim();
+        // var sequence = sequenceInput.value.trim();
 
         // Check if data is not empty
-        if (!data) {
-            alert('Please enter data.');
+        // if (!smiles || !sequence) {
+        if (!smiles) {
+            alert('Please enter SMILES sequence.');
             return;
         }
 
         // Check data length
-        var maxSizeInBytes = 1024; // 1KB (in bytes)
-        if (new Blob([data]).size > maxSizeInBytes) {
+        var maxSMILESSizeInBytes = 1024; // 1KB (in bytes)
+        // var maxSequenceSizeInBytes = 10240; //10KB (in bytes)
+        // if (new Blob([smiles]).size > maxSMILESSizeInBytes || new Blob([sequence]).size > maxSequenceSizeInBytes) {
+        if (new Blob([smiles]).size > maxSMILESSizeInBytes) {
             alert('Data size exceeds the maximum limit (1KB).');
             return;
         }
@@ -238,7 +260,8 @@
         var submitURL = './request/submit';
 
         // Use GET request to send data
-        fetch(`${submitURL}?smiles=${encodeURIComponent(data)}`)
+        // fetch(`${submitURL}?smiles=${encodeURIComponent(smiles)}&sequence=${encodeURIComponent(sequence)}`)
+        fetch(`${submitURL}?smiles=${encodeURIComponent(smiles)}`)
             .then(response => response.json())
             .then(data => {
                 updateResultContainer(data);

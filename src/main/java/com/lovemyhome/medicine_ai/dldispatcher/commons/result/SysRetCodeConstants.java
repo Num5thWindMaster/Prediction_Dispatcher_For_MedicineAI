@@ -8,7 +8,8 @@ public enum SysRetCodeConstants {
     REQUEST_FORMAT_ILLEGAL              ("010000", "文件或数据格式非法"),
     REQUISITE_PARAMETER_NOT_EXIST       ("020000", "文件或数据不能为空"),
     SYSTEM_TIMEOUT                      ("004000", "系统超时"),
-    SYSTEM_ERROR                        ("005000", "系统错误");
+    SYSTEM_ERROR                        ("005000", "系统错误"),
+    FILENAME_LENGTH_EXCEEDED ("011000", "文件名长度超过15字符");
 
     private String code;
     private String message;

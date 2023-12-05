@@ -1,0 +1,4 @@
+file:
+  uploadFolder: \private\python\csv #上传文件被记录在项目目录中的dev文件夹下
+  pythonFolder: D:\Programs\apache-tomcat-9.0.78\webapps\Prediction_Dispatcher_For_MedicineAI\WEB-INF\classes\private\MF-MPR #python文件被记录在项目resources/private目录下
+  model_pt: Src_model.pt

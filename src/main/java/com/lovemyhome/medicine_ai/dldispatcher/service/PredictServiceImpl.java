@@ -1,8 +1,12 @@
 package com.lovemyhome.medicine_ai.dldispatcher.service;// -*- coding: utf-8 -*-
 import com.lovemyhome.medicine_ai.dldispatcher.api.PredictService;
+import com.lovemyhome.medicine_ai.dldispatcher.commons.result.DTIPredictionResult;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.SysRetCodeConstants;
 import com.lovemyhome.medicine_ai.dldispatcher.dao.PredictResponseBody;
 import com.lovemyhome.medicine_ai.dldispatcher.dao.UploadResponseBody;
+import com.opencsv.CSVParser;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 import org.openscience.cdk.DefaultChemObjectBuilder;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +18,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.openscience.cdk.smiles.SmilesParser;
@@ -37,8 +43,14 @@ public class PredictServiceImpl implements PredictService {
     private String pyModule;
     @Value("${py.function}")
     private String pyFunc;
+    @Value("${py.params}")
+    private String pyParams;
+    @Value("${file.model_pt}")
+    private String modelPt;
+
     private final String baseDir;
     private static final Logger LOGGER = Logger.getLogger(PredictServiceImpl.class.getName());
+
     private static boolean isValidSmiles(String smilesString) {
         SmilesParser smilesParser = new SmilesParser(DefaultChemObjectBuilder.getInstance());
         try {
@@ -49,24 +61,94 @@ public class PredictServiceImpl implements PredictService {
             return false; // If parsing fails, the string is not a valid SMILES sequence
         }
     }
+
+    private static boolean isValidCSV(String filePath) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            new CSVParser().parseLine(reader.readLine()); // Try to parse the first line
+            return true; // If parsing succeeds, it's a CSV file
+        } catch (IOException e) {
+            return false; // Parsing failed, not a CSV file
+        }
+    }
+
+    @Override
+    public String convertToCsv(String smiles, String sequence) {
+        // 文件路径
+        String directory = baseDir + dir + File.separator;
+        String filePath = baseDir + dir + File.separator + System.currentTimeMillis() + ".csv";
+        LOGGER.log(Level.INFO, "directory: " + directory + "\nfilePath: " + filePath);
+        try {
+            Files.createDirectories(Paths.get(directory));
+            Files.createFile(Paths.get(filePath));
+            CSVWriter csvWriter = new CSVWriter(new FileWriter(filePath), ',', CSVWriter.NO_QUOTE_CHARACTER, '"', "\n");
+            // 定义列名
+            String[] header = {"SMILES", "SEQUENCES"};
+            csvWriter.writeNext(header);
+
+            // 添加SMILES数据行
+            String[] data = {smiles, sequence};
+            csvWriter.writeNext(data);
+
+            System.out.println("CSV 文件已生成：" + filePath);
+            csvWriter.close();
+            return filePath;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    public String convertToCsv(String smiles) {
+        // 文件路径
+        String directory = baseDir + dir + File.separator;
+        String filePath = baseDir + dir + File.separator + System.currentTimeMillis() + ".csv";
+        LOGGER.log(Level.INFO, "directory: " + directory + "\nfilePath: " + filePath);
+        try {
+            Files.createDirectories(Paths.get(directory));
+            Files.createFile(Paths.get(filePath));
+            CSVWriter csvWriter = new CSVWriter(new FileWriter(filePath), ',', CSVWriter.NO_QUOTE_CHARACTER, '"', "\n");
+            // 定义列名
+            String[] header = {"SMILES"};
+            csvWriter.writeNext(header);
+
+            // 添加SMILES数据行
+            String[] data = {smiles};
+            csvWriter.writeNext(data);
+
+            System.out.println("CSV 文件已生成：" + filePath);
+            csvWriter.close();
+            return filePath;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public PredictServiceImpl() {
         baseDir = System.getProperty("user.dir");
+        LOGGER.log(Level.INFO, "baseDir: " + baseDir);
     }
 //    private static ConfigurationDao configurationDao = new ConfigurationDao();
 
     @Override
-    public UploadResponseBody getUploadedFile(MultipartFile file, HttpServletRequest request){
+    public UploadResponseBody getUploadedFile(MultipartFile file, HttpServletRequest request) {
         String name = file.getOriginalFilename();
         UploadResponseBody responseBody = new UploadResponseBody();
-        if (name == null){//空
+        if (name == null) {//空
             responseBody.setCode(SysRetCodeConstants.REQUISITE_PARAMETER_NOT_EXIST.getCode());
             return responseBody;
         }
-        if ( !name.endsWith(".csv") && !name.endsWith(".txt")){//非序列格式
+//        if ( !name.endsWith(".csv") && !name.endsWith(".txt")){//非序列格式
+        if (!name.endsWith(".csv")) {//非序列格式
             responseBody.setCode(SysRetCodeConstants.REQUEST_FORMAT_ILLEGAL.getCode());
             return responseBody;
         }
-        if (file.getSize() > 1024){//文件过大
+        if (name.length() > 15) {//文件名过长
+            responseBody.setCode(SysRetCodeConstants.FILENAME_LENGTH_EXCEEDED.getCode());
+            return responseBody;
+        }
+        if (file.getSize() > 10240) {//文件过大
             responseBody.setCode(SysRetCodeConstants.REQUEST_FORMAT_ILLEGAL.getCode());
             return responseBody;
         }
@@ -78,11 +160,15 @@ public class PredictServiceImpl implements PredictService {
 //            path2 = ResourceUtils.getURL("classpath:static").getPath().replaceFirst("^/+", "") ;
 //            dirPath = path2 + dir;
             LOGGER.log(Level.INFO, "WorkSpace path: " + System.getProperty("user.dir"));
-            dirPath =baseDir + dir;
+            dirPath = baseDir + dir;
             Files.createDirectories(Paths.get(dirPath));
-            String dirPath2 =dirPath + "/" + System.currentTimeMillis() + "_" + request.getRemoteHost() + "_" + request.getRemotePort() + ".csv";
+            String dirPath2 = dirPath + File.separator + System.currentTimeMillis() + name;
             Path path = Files.createFile(Paths.get(dirPath2));
             file.transferTo(path);
+            if (!isValidCSV(dirPath2)) {
+                responseBody.setCode(SysRetCodeConstants.REQUEST_FORMAT_ILLEGAL.getCode());
+                return responseBody;
+            }
             responseBody.setCode(SysRetCodeConstants.SUCCESS.getCode());
             responseBody.setPath(path);
         } catch (IOException e) {
@@ -91,13 +177,14 @@ public class PredictServiceImpl implements PredictService {
             LOGGER.log(Level.SEVERE, "Smiles File IOException.");
             e.printStackTrace();
             responseBody.setCode(SysRetCodeConstants.SYSTEM_ERROR.getCode());
-        } finally {
-            return responseBody;
         }
-    }
-/*
+        return responseBody;
 
- */
+    }
+
+    /*
+
+     */
 //    public static void setConfigurationDao() {
 ////        Yaml yaml = new Yaml();
 ////        try {
@@ -131,17 +218,18 @@ public class PredictServiceImpl implements PredictService {
 //        }
 //    }
     @Override
-    public PredictResponseBody getPrediction(String smiles){
+    public PredictResponseBody getPrediction(String smiles) {
         PredictResponseBody responseBody = new PredictResponseBody();
-        if(null == smiles || !isValidSmiles(smiles)) {
+        if (null == smiles || !isValidSmiles(smiles)) {
             responseBody.setCode(SysRetCodeConstants.REQUEST_FORMAT_ILLEGAL.getCode());
             responseBody.setMsg("不是有效的Smiles数据");
-            return  responseBody;
+            return responseBody;
         }
-        //Smiles有效性检测
+        //上面为Smiles有效性检测
+//        pyParams = smiles;
         String path = null;
         try {
-            path = (ResourceUtils.getURL("classpath:private").getPath().startsWith("/var")? ResourceUtils.getURL("classpath:private").getPath() : ResourceUtils.getURL("classpath:private").getPath().replaceFirst("/","") ) + pythonFolder;
+            path = (ResourceUtils.getURL("classpath:private").getPath().startsWith("/var") ? ResourceUtils.getURL("classpath:private").getPath() : ResourceUtils.getURL("classpath:private").getPath().replaceFirst("/", "")) + pythonFolder;
 //            LOGGER.log(Level.INFO, "Resource Check: " + path);
 //            URL path0 = ResourceUtils.getURL("classpath:static");
 //            String str1 = path0.getPath();
@@ -154,8 +242,9 @@ public class PredictServiceImpl implements PredictService {
 
         try {
             // 构建ProcessBuilder对象
-            ProcessBuilder pb = new ProcessBuilder("python", pythonScriptPath, smiles);
+            ProcessBuilder pb = new ProcessBuilder("python", pythonScriptPath, pyParams);
             // 启动外部进程
+
             Process process = pb.start();
             // 获取进程输出流
             InputStream inputStream = process.getInputStream();
@@ -183,13 +272,14 @@ public class PredictServiceImpl implements PredictService {
             return responseBody;
         }
     }
+
     @Override
-    public PredictResponseBody getPrediction(Path path){
+    public PredictResponseBody getPrediction(Path path) {
         try {
             BufferedReader bfr = Files.newBufferedReader(path, UTF_8);
             StringBuilder sb = new StringBuilder();
             String line;
-            while((line = bfr.readLine()) != null){
+            while ((line = bfr.readLine()) != null) {
                 sb.append(line);
             }
             String content = sb.toString();
@@ -200,7 +290,102 @@ public class PredictServiceImpl implements PredictService {
             return null;
         }
     }
+
+    @Override
+    public List<DTIPredictionResult> getDTIPrediction(String smiles, String sequence, String pyScriptPath) {
+        String path = convertToCsv(smiles);
+        LOGGER.log(Level.INFO, "DTIPredictionWithInputTaskReceived, path=" + path);
+        List<DTIPredictionResult> resultList = getDTIPrediction(path, sequence);
+        return resultList;
+    }
+
+    @Override
+    public List<DTIPredictionResult> getDTIPrediction(String path, String pyScriptType) {
+        LOGGER.log(Level.INFO, "DTIPredictionWithCSVTaskReceived.");
+        if ("lyn".equals(pyScriptType)) {
+
+            List<DTIPredictionResult> responseList = new ArrayList<>();
+            String pythonScriptPath = pythonFolder + File.separator + pyModule;
+            try {
+                // Construct the command to execute the Python script
+                String command = "python " + pythonScriptPath + " " + pyParams + " --predict_path " + path + " --model_path " + pythonFolder + File.separator + modelPt;
+                LOGGER.log(Level.WARNING, "command: " + command);
+                // Execute the command
+                Process process = Runtime.getRuntime().exec(command);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+                // Read the output of the Python script
+                String line;
+//            StringBuilder output = new StringBuilder();
+                while ((line = reader.readLine()) != null) {
+//                PredictResponseBody responseItem = new PredictResponseBody(line);
+//                    String[] row = line.split(",");
+//                    DTIPredictionResult result = new DTIPredictionResult(row[0], row[1], row[2]);
+//                    responseList.add(result);
+                    if (!line.endsWith(".csv"))
+                        continue;
+                    String resultPath = baseDir + File.separator + line;
+                    try (CSVReader csvReader = new CSVReader(new FileReader(resultPath))) {
+                        List<String[]> lines = csvReader.readAll();
+
+                        // 第一行通常是标题，跳过
+                        String[] head = lines.get(0);
+                        lines.remove(0);
+
+                        for (String[] line0 : lines) {
+                            // 按照CSV文件中的顺序封装为对象
+                            DTIPredictionResult result = new DTIPredictionResult(line0[0], head[6], line0[6]);
+                            responseList.add(result);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                // Wait for the process to finish
+                process.waitFor();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return responseList;
+        }
+        return null;
+    }
 }
+
+//    @Override
+//    public PredictResponseBody getPrediction(String pythonScriptPath, String inputParameter) {
+//        List<DTIPredictionResult> responseList = new ArrayList<>();
+//
+//        try {
+//            // Construct the command to execute the Python script
+//            String command = "python3 " + pythonScriptPath + " " + pyParams;
+//
+//            // Execute the command
+//            Process process = Runtime.getRuntime().exec(command);
+//            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+//
+//            // Read the output of the Python script
+//            String line;
+////            StringBuilder output = new StringBuilder();
+//            while ((line = reader.readLine()) != null) {
+////                PredictResponseBody responseItem = new PredictResponseBody(line);
+//                String[] row = line.split(",");
+//                DTIPredictionResult result = new DTIPredictionResult(row[0], row[1], row[2]);
+//                responseList.add(result);
+//            }
+//            // Wait for the process to finish
+//            process.waitFor();
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        return new PredictResponseBody();
+//    }
+//
+//}
 
 //class PythonRunner {
 //

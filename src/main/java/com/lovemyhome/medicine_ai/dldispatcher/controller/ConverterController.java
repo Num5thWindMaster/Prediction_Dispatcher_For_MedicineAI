@@ -2,6 +2,7 @@ package com.lovemyhome.medicine_ai.dldispatcher.controller;// -*- coding: utf-8 
 
 
 import com.lovemyhome.medicine_ai.dldispatcher.api.PredictService;
+import com.lovemyhome.medicine_ai.dldispatcher.commons.result.DTIPredictionResult;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.ResponseData;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.ResponseUtil;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.SysRetCodeConstants;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Objects;
 
 // @Author : HaiqingSun
@@ -31,29 +33,29 @@ public class ConverterController {
     @PostMapping("/upload")
     public ResponseData uploadFile(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
         if (Objects.equals(file, null)){
-            return new ResponseUtil<>().setErrorMsg("未选择文件，请重新选择文件上传");
+            return new ResponseUtil<>().setErrorMsg("No file selected");
         }
-        if (file.getSize() > 1024) {
-            return new ResponseUtil<>().setErrorMsg("文件过大，请检查");
+        if (file.getSize() > 10240) {
+            return new ResponseUtil<>().setErrorMsg("Too large file");
         }
         UploadResponseBody uploadResponseBody = predictService.getUploadedFile(file, request);
         if (!Objects.equals(uploadResponseBody.getCode(), "000000")) {
             return new ResponseUtil<>().setErrorMsg(500, SysRetCodeConstants.getMessage(uploadResponseBody.getCode()));//501上传错误，502格式错误，500系统错误
         }
-        PredictResponseBody responseBody = predictService.getPrediction(uploadResponseBody.getPath());
-        if (Objects.equals(responseBody.getCode(), SysRetCodeConstants.SUCCESS.getCode())){
-            return new ResponseUtil<>().setData(responseBody);
+        List<DTIPredictionResult> resultList = predictService.getDTIPrediction(uploadResponseBody.getPath().toString(), "lyn");
+        if (resultList != null){
+            return new ResponseUtil<>().setData(resultList);
         }
-        return new ResponseUtil<>().setErrorMsg(SysRetCodeConstants.getMessage(responseBody.getCode()));
+        return new ResponseUtil<>().setErrorMsg(SysRetCodeConstants.getMessage("005000"));
 
     }
     @GetMapping("/submit")
-    public ResponseData submitSmiles(@RequestParam("smiles")String smiles, HttpServletRequest request){
-        PredictResponseBody responseBody = predictService.getPrediction(smiles);
-        if (Objects.equals(responseBody.getCode(), SysRetCodeConstants.SUCCESS.getCode())){
-            return new ResponseUtil<>().setData(responseBody);
+    public ResponseData submitSmilesSequence(@RequestParam("smiles")String smiles, HttpServletRequest request){
+        List<DTIPredictionResult> resultList = predictService.getDTIPrediction(smiles, "lyn", "default");
+        if (resultList != null){
+            return new ResponseUtil<>().setData(resultList);
         }
-        return new ResponseUtil<>().setErrorMsg(SysRetCodeConstants.getMessage(responseBody.getCode()));
+        return new ResponseUtil<>().setErrorMsg(500, "System Error");
 
     }
 

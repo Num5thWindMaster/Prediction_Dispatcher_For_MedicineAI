@@ -114,9 +114,9 @@
     <button type="button" id="uploadFormButton" onclick="clearFile()">Clear</button>
 </form>
 <div>
-    <h3>or, please input a SMILES sequence: </h3>
+    <h3>or, please input a SMILES and a target sequence: </h3>
     <input type="text" id="smilesInput" placeholder="Enter SMILES here">
-    <!--    <input type="text" id="sequenceInput" placeholder="Enter target sequence here, default Lyn">-->
+    <input type="text" id="sequenceInput" placeholder="Enter target sequence here, default Lyn">
     <button type="button" id="submitDataButton" onclick="submitData()">Submit Data</button>
 </div>
 <div>
@@ -177,7 +177,7 @@
                 resultInfo += `Target: ${resultItem.targetName}\n\n`;
             }
 
-            resultTextBox.innerHTML = resultInfo + `Time: ${timestampToLocalTime(data.timestamp)}`;
+            resultTextBox.innerHTML = resultInfo + `\nTime: ${timestampToLocalTime(data.timestamp)}`;
             // resultTextBox.innerHTML = `Probability: ${JSON.stringify(data.result[0].probability)}\nSmiles: ${JSON.stringify(data.result[0].smiles)}\ntarget sequence: ${JSON.stringify(data.result[0].sequence)}\nTime: ${timestampToLocalTime(data.timestamp)}`;
         } else {
             // Show error message
@@ -236,23 +236,21 @@
     }
     function submitData() {
         var smilesInput = document.getElementById('smilesInput');
-        // var sequenceInput = document.getElementById('sequenceInput');
+        var sequenceInput = document.getElementById('sequenceInput');
         var smiles = smilesInput.value.trim();
-        // var sequence = sequenceInput.value.trim();
+        var sequence = sequenceInput.value.trim();
 
         // Check if data is not empty
-        // if (!smiles || !sequence) {
-        if (!smiles) {
-            alert('Please enter SMILES sequence.');
+        if (!smiles || !sequence) {
+            alert('Please enter full data.');
             return;
         }
 
         // Check data length
         var maxSMILESSizeInBytes = 1024; // 1KB (in bytes)
-        // var maxSequenceSizeInBytes = 10240; //10KB (in bytes)
-        // if (new Blob([smiles]).size > maxSMILESSizeInBytes || new Blob([sequence]).size > maxSequenceSizeInBytes) {
-        if (new Blob([smiles]).size > maxSMILESSizeInBytes) {
-            alert('Data size exceeds the maximum limit (1KB).');
+        var maxSequenceSizeInBytes = 10240; //10KB (in bytes)
+        if (new Blob([smiles]).size > maxSMILESSizeInBytes || new Blob([sequence]).size > maxSequenceSizeInBytes) {
+            alert('Data size exceeds the maximum limit (1KB/10KB).');
             return;
         }
 
@@ -260,8 +258,7 @@
         var submitURL = './request/submit';
 
         // Use GET request to send data
-        // fetch(`${submitURL}?smiles=${encodeURIComponent(smiles)}&sequence=${encodeURIComponent(sequence)}`)
-        fetch(`${submitURL}?smiles=${encodeURIComponent(smiles)}`)
+        fetch(`${submitURL}?smiles=${encodeURIComponent(smiles)}&sequence=${encodeURIComponent(sequence)}`)
             .then(response => response.json())
             .then(data => {
                 updateResultContainer(data);

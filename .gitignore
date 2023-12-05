@@ -2,6 +2,8 @@ HELP.md
 target/
 dev/
 work/
+output/
+src/main/resources/private/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
