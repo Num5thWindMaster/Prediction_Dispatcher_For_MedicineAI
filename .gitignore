@@ -3,6 +3,7 @@ target/
 dev/
 work/
 output/
+test/
 src/main/resources/private/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
