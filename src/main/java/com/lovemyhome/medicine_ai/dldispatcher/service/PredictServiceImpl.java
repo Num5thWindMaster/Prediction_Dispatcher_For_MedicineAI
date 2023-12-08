@@ -37,13 +37,17 @@ public class PredictServiceImpl implements PredictService {
 
     @Value("${file.uploadFolder}")
     private String dir;
-    @Value("${file.pythonFolder}")
-    private String pythonFolder;
-    @Value("${py.module}")
-    private String pyModule;
-    @Value("${py.function}")
-    private String pyFunc;
-    @Value("${py.params}")
+    @Value("${file.MF_MPRFolder}")
+    private String MF_MPRFolder;
+    @Value("${file.AIGO_DTIFolder}")
+    private String AIGO_DTIFolder;
+    @Value("${py.module.lyn}")
+    private String MF_MPRModule;
+    @Value("${py.module.tlr4}")
+    private String AIGO_DTIModule;
+//    @Value("${py.function}")
+//    private String pyFunc;
+    @Value("${py.module.params}")
     private String pyParams;
     @Value("${file.model_pt}")
     private String modelPt;
@@ -132,7 +136,7 @@ public class PredictServiceImpl implements PredictService {
 //    private static ConfigurationDao configurationDao = new ConfigurationDao();
 
     @Override
-    public UploadResponseBody getUploadedFile(MultipartFile file, HttpServletRequest request) {
+    public UploadResponseBody getUploadedFile(MultipartFile file, String task, HttpServletRequest request) {
         String name = file.getOriginalFilename();
         UploadResponseBody responseBody = new UploadResponseBody();
         if (name == null) {//空
@@ -162,7 +166,7 @@ public class PredictServiceImpl implements PredictService {
             LOGGER.log(Level.INFO, "WorkSpace path: " + System.getProperty("user.dir"));
             dirPath = baseDir + dir;
             Files.createDirectories(Paths.get(dirPath));
-            String dirPath2 = dirPath + File.separator + System.currentTimeMillis() + name;
+            String dirPath2 = dirPath + File.separator + System.currentTimeMillis() + "_" + task + "_" + name;
             Path path = Files.createFile(Paths.get(dirPath2));
             file.transferTo(path);
             if (!isValidCSV(dirPath2)) {
@@ -229,7 +233,7 @@ public class PredictServiceImpl implements PredictService {
 //        pyParams = smiles;
         String path = null;
         try {
-            path = (ResourceUtils.getURL("classpath:private").getPath().startsWith("/var") ? ResourceUtils.getURL("classpath:private").getPath() : ResourceUtils.getURL("classpath:private").getPath().replaceFirst("/", "")) + pythonFolder;
+            path = (ResourceUtils.getURL("classpath:private").getPath().startsWith("/var") ? ResourceUtils.getURL("classpath:private").getPath() : ResourceUtils.getURL("classpath:private").getPath().replaceFirst("/", "")) + MF_MPRFolder;
 //            LOGGER.log(Level.INFO, "Resource Check: " + path);
 //            URL path0 = ResourceUtils.getURL("classpath:static");
 //            String str1 = path0.getPath();
@@ -238,7 +242,7 @@ public class PredictServiceImpl implements PredictService {
             responseBody.setCode(SysRetCodeConstants.SYSTEM_ERROR.getCode());
             return responseBody;
         }
-        String pythonScriptPath = path + "/" + pyModule; //Python脚本路径
+        String pythonScriptPath = path + "/" + MF_MPRModule; //Python脚本路径
 
         try {
             // 构建ProcessBuilder对象
@@ -290,67 +294,125 @@ public class PredictServiceImpl implements PredictService {
             return null;
         }
     }
-
     @Override
     public List<DTIPredictionResult> getDTIPrediction(String smiles, String sequence, String pyScriptPath) {
         String path = convertToCsv(smiles);
         LOGGER.log(Level.INFO, "DTIPredictionWithInputTaskReceived, path=" + path);
-        List<DTIPredictionResult> resultList = getDTIPrediction(path, sequence);
+        List<DTIPredictionResult> resultList = getDTIPrediction(path, pyScriptPath);
+        try {
+            File path0=new File(ResourceUtils.getURL("classpath:").getPath());
+            LOGGER.info("Absolute Path: " + path0.getAbsolutePath());
+        } catch (FileNotFoundException e) {
+            LOGGER.log(Level.SEVERE, e.getMessage());
+        }
+//        if(!path0.exists()){
+//            path=new File("");
+//        }
         return resultList;
     }
 
     @Override
     public List<DTIPredictionResult> getDTIPrediction(String path, String pyScriptType) {
         LOGGER.log(Level.INFO, "DTIPredictionWithCSVTaskReceived.");
-        if ("lyn".equals(pyScriptType)) {
-
-            List<DTIPredictionResult> responseList = new ArrayList<>();
-            String pythonScriptPath = pythonFolder + File.separator + pyModule;
-            try {
-                // Construct the command to execute the Python script
-                String command = "python " + pythonScriptPath + " " + pyParams + " --predict_path " + path + " --model_path " + pythonFolder + File.separator + modelPt;
+        List<DTIPredictionResult> responseList = new ArrayList<>();
+        String module = null;
+        String pythonScriptPath = null;
+        String command = null;
+        switch (pyScriptType) {
+            case "LYN":
+                pythonScriptPath = MF_MPRFolder + File.separator + MF_MPRModule;
+                command = "python " + pythonScriptPath + " " + pyParams + " --predict_path " + path + " --model_path " + MF_MPRFolder + File.separator + modelPt;
                 LOGGER.log(Level.WARNING, "command: " + command);
-                // Execute the command
-                Process process = Runtime.getRuntime().exec(command);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                try {
+                    // Construct the command to execute the Python script
 
-                // Read the output of the Python script
-                String line;
-//            StringBuilder output = new StringBuilder();
-                while ((line = reader.readLine()) != null) {
-//                PredictResponseBody responseItem = new PredictResponseBody(line);
-//                    String[] row = line.split(",");
-//                    DTIPredictionResult result = new DTIPredictionResult(row[0], row[1], row[2]);
-//                    responseList.add(result);
-                    if (!line.endsWith(".csv"))
-                        continue;
-                    String resultPath = baseDir + File.separator + line;
-                    try (CSVReader csvReader = new CSVReader(new FileReader(resultPath))) {
-                        List<String[]> lines = csvReader.readAll();
+                    // Execute the command
+                    Process process = Runtime.getRuntime().exec(command);
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-                        // 第一行通常是标题，跳过
-                        String[] head = lines.get(0);
-                        lines.remove(0);
+                    // Read the output of the Python script
+                    String line;
+                    //            StringBuilder output = new StringBuilder();
+                    while ((line = reader.readLine()) != null) {
+                        //                PredictResponseBody responseItem = new PredictResponseBody(line);
+                        //                    String[] row = line.split(",");
+                        //                    DTIPredictionResult result = new DTIPredictionResult(row[0], row[1], row[2]);
+                        //                    responseList.add(result);
+                        if (!line.endsWith(".csv"))
+                            continue;
+                        String resultPath = baseDir + File.separator + line;
+                        try (CSVReader csvReader = new CSVReader(new FileReader(resultPath))) {
+                            List<String[]> lines = csvReader.readAll();
 
-                        for (String[] line0 : lines) {
-                            // 按照CSV文件中的顺序封装为对象
-                            DTIPredictionResult result = new DTIPredictionResult(line0[0], head[6], line0[6]);
-                            responseList.add(result);
+                            // 第一行通常是标题，跳过
+                            String[] head = lines.get(0);
+                            lines.remove(0);
+
+                            for (String[] line0 : lines) {
+                                // 按照CSV文件中的顺序封装为对象
+                                DTIPredictionResult result = new DTIPredictionResult(line0[0], head[6], line0[6]);
+                                responseList.add(result);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    } catch (Exception e) {
+                    }
+                    // Wait for the process to finish
+                    process.waitFor();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+
+            case "TLR4":
+                pythonScriptPath = AIGO_DTIFolder + File.separator + AIGO_DTIModule;
+                command = "python " + pythonScriptPath + " " + pyParams + " --test_path " + path;
+                try {
+                    // Construct the command to execute the Python script
+                    // Execute the command
+                    Process process = Runtime.getRuntime().exec(command);
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    // Read the output of the Python script
+                    String line;
+                    //            StringBuilder output = new StringBuilder();
+                    while ((line = reader.readLine()) != null) {
+                        //                PredictResponseBody responseItem = new PredictResponseBody(line);
+                        //                    String[] row = line.split(",");
+                        //                    DTIPredictionResult result = new DTIPredictionResult(row[0], row[1], row[2]);
+                        //                    responseList.add(result);
+//                        if (!line.endsWith(".csv"))
+//                            continue;
+                        if (line.startsWith("[") && line.endsWith("]")) {
+                            String tmp1 = line.replaceAll("[\\[\\]]", "").trim();
+                            String[] tmp2 = tmp1.split("\\s+");
+                            try (CSVReader csvReader = new CSVReader(new FileReader(path))) {
+                                List<String[]> lines = csvReader.readAll();
+
+                                // 第一行通常是标题，跳过
+                                String[] head = lines.get(0);
+                                lines.remove(0);
+                                int i = 0;
+                                for (String[] line0 : lines) {
+                                    // 按照CSV文件中的顺序封装为对象
+                                    DTIPredictionResult result = new DTIPredictionResult(line0[0], pyScriptType, tmp2[i]);
+                                    responseList.add(result);
+                                    i++;
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        }
+                        // Wait for the process to finish
+                        process.waitFor();
+                    }
+                    } catch(Exception e){
                         e.printStackTrace();
                     }
-                }
-                // Wait for the process to finish
-                process.waitFor();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            return responseList;
+                break;
         }
-        return null;
+            return responseList;
     }
 }
 

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -25,37 +26,48 @@ public class ConverterController {
 
     PredictService predictService;
 
+    HashSet<String> tasks;
+
     @Autowired
-    public ConverterController(PredictService predictService){
+    public ConverterController(PredictService predictService, HashSet<String> tasks){
         this.predictService = predictService;
+        this.tasks = tasks;
+        tasks.add("LYN");
+        tasks.add("TLR4");
     }
 
     @PostMapping("/upload")
-    public ResponseData uploadFile(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
+    public ResponseData uploadFile(@RequestParam("file") MultipartFile file, @RequestParam("task")String task , HttpServletRequest request) {
         if (Objects.equals(file, null)){
             return new ResponseUtil<>().setErrorMsg("No file selected");
         }
         if (file.getSize() > 10240) {
             return new ResponseUtil<>().setErrorMsg("Too large file");
         }
-        UploadResponseBody uploadResponseBody = predictService.getUploadedFile(file, request);
+        if (task == null || "".equals(task) || !tasks.contains(task)){
+            return new ResponseUtil<>().setErrorMsg("Task not supported");
+        }
+        UploadResponseBody uploadResponseBody = predictService.getUploadedFile(file, task, request);
         if (!Objects.equals(uploadResponseBody.getCode(), "000000")) {
             return new ResponseUtil<>().setErrorMsg(500, SysRetCodeConstants.getMessage(uploadResponseBody.getCode()));//501上传错误，502格式错误，500系统错误
         }
-        List<DTIPredictionResult> resultList = predictService.getDTIPrediction(uploadResponseBody.getPath().toString(), "lyn");
-        if (resultList != null){
+        List<DTIPredictionResult> resultList = predictService.getDTIPrediction(uploadResponseBody.getPath().toString(), task);
+        if (resultList != null && resultList.size() != 0){
             return new ResponseUtil<>().setData(resultList);
         }
         return new ResponseUtil<>().setErrorMsg(SysRetCodeConstants.getMessage("005000"));
 
     }
     @GetMapping("/submit")
-    public ResponseData submitSmilesSequence(@RequestParam("smiles")String smiles, HttpServletRequest request){
-        List<DTIPredictionResult> resultList = predictService.getDTIPrediction(smiles, "lyn", "default");
-        if (resultList != null){
+    public ResponseData submitSmilesSequence(@RequestParam("smiles")String smiles, @RequestParam("task")String task, HttpServletRequest request){
+        if (task == null || "".equals(task) || !tasks.contains(task)) {
+                return new ResponseUtil<>().setErrorMsg("Task not supported");
+        }
+        List<DTIPredictionResult> resultList = predictService.getDTIPrediction(smiles, "default", task);
+        if (resultList != null && resultList.size() != 0){
             return new ResponseUtil<>().setData(resultList);
         }
-        return new ResponseUtil<>().setErrorMsg(500, "System Error");
+        return new ResponseUtil<>().setErrorMsg(SysRetCodeConstants.getMessage("005000"));
 
     }
 

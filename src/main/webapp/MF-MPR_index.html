@@ -2,7 +2,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <html>
 <head>
-    <title>Use Our Model To Predict Your Component</title>
+    <title>Use Our MF-MPR Model To Predict Your Component</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -107,7 +107,7 @@
 </head>
 <body>
 <h2 style="text-align: center">Predict for LYN target molecule</h2>
-<h3 style="text-align: center">Please upload csv file, using ',' as the seperator:</h3>
+<h3 style="text-align: center">Please upload csv file, with 1 column smiles sequence:</h3>
 <form id="uploadForm" enctype="multipart/form-data" style="text-align: center" onsubmit="uploadFile(event)">
     <input type="file" name="file" class="file-input" id="fileInput" onchange="validateFileSelected()"/>
     <input type="submit" value="Submit" id="submitButton" disabled>
@@ -151,7 +151,7 @@
         validateFileSelected(); // Update the submit button state
     }
 
-    function updateResultContainer(data) {
+    function updateResultContainer(data, status) {
         var resultContainer = document.getElementById('resultContainer');
         var resultTextBox = document.getElementById('resultTextBox');
 
@@ -163,30 +163,34 @@
             resultTextBox.cols = 50;
             resultContainer.appendChild(resultTextBox);
         }
+        if (status.length === 0) {
+            if (data.code === 200) {
+                // Show result in the text box
+                // resultTextBox.innerHTML = JSON.stringify(data.result);
+                let resultInfo = "";
 
-        if (data.code === 200) {
-            // Show result in the text box
-            // resultTextBox.innerHTML = JSON.stringify(data.result);
-            let resultInfo = "";
+                for (let i = 0; i < data.result.length; i++) {
+                    const resultItem = data.result[i];
+                    resultInfo += `Pair ${i + 1}:\n`;
+                    resultInfo += `Score: ${resultItem.probability}\n`;
+                    resultInfo += `Smiles: ${resultItem.smiles}\n`;
+                    resultInfo += `Target: ${resultItem.targetName}\n\n`;
+                }
 
-            for (let i = 0; i < data.result.length; i++) {
-                const resultItem = data.result[i];
-                resultInfo += `Pair ${i + 1}:\n`;
-                resultInfo += `Score: ${resultItem.probability}\n`;
-                resultInfo += `Smiles: ${resultItem.smiles}\n`;
-                resultInfo += `Target: ${resultItem.targetName}\n\n`;
+                resultTextBox.innerHTML = resultInfo + `Time: ${timestampToLocalTime(data.timestamp)}`;
+                // resultTextBox.innerHTML = `Probability: ${JSON.stringify(data.result[0].probability)}\nSmiles: ${JSON.stringify(data.result[0].smiles)}\ntarget sequence: ${JSON.stringify(data.result[0].sequence)}\nTime: ${timestampToLocalTime(data.timestamp)}`;
+            } else {
+                // Show error message
+                resultTextBox.innerHTML = `Error: ${data.message} (Error code: ${data.code})\nTime: ${timestampToLocalTime(data.timestamp)}`;
             }
-
-            resultTextBox.innerHTML = resultInfo + `Time: ${timestampToLocalTime(data.timestamp)}`;
-            // resultTextBox.innerHTML = `Probability: ${JSON.stringify(data.result[0].probability)}\nSmiles: ${JSON.stringify(data.result[0].smiles)}\ntarget sequence: ${JSON.stringify(data.result[0].sequence)}\nTime: ${timestampToLocalTime(data.timestamp)}`;
-        } else {
-            // Show error message
-            resultTextBox.innerHTML = `Error: ${data.message} (Error code: ${data.code})\nTime: ${timestampToLocalTime(data.timestamp)}`;
+        }else if(data.length === 0) {
+            resultTextBox.innerText = 'Please wait for few seconds...'
         }
     }
 
     function uploadFile(event) {
         event.preventDefault(); // Prevent the default form submission
+        updateResultContainer('', '1');
         var fileInput = document.getElementById('fileInput');
         var file = fileInput.files[0];
 
@@ -197,10 +201,10 @@
         }
 
         // Check file extension
-        var allowedExtensions = ['.csv', '.txt'];
+        var allowedExtensions = ['.csv'];
         var fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
         if (!allowedExtensions.includes(fileExtension)) {
-            alert('Only .csv or .txt files are allowed.');
+            alert('Only .csv files are allowed.');
             return;
         }
 
@@ -213,6 +217,7 @@
 
         var formData = new FormData();
         formData.append('file', file);
+        formData.append('task', 'LYN');
 
         // Replace the URL below with your backend endpoint for file upload
         var uploadURL = './request/upload';
@@ -223,7 +228,7 @@
         })
             .then(response => response.json())
             .then(data => {
-                updateResultContainer(data);
+                updateResultContainer(data, '');
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -255,16 +260,16 @@
             alert('Data size exceeds the maximum limit (1KB).');
             return;
         }
-
+        updateResultContainer('', '1');
         // Replace the URL below with your backend endpoint for data submission
         var submitURL = './request/submit';
 
         // Use GET request to send data
         // fetch(`${submitURL}?smiles=${encodeURIComponent(smiles)}&sequence=${encodeURIComponent(sequence)}`)
-        fetch(`${submitURL}?smiles=${encodeURIComponent(smiles)}`)
+        fetch(`${submitURL}?smiles=${encodeURIComponent(smiles)}&task=LYN`)
             .then(response => response.json())
             .then(data => {
-                updateResultContainer(data);
+                updateResultContainer(data, '');
             })
             .catch(error => {
                 console.error('Error:', error);

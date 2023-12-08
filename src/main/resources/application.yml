@@ -1,11 +1,15 @@
 spring:
   profiles:
     active: web
+  config:
+    name:
 # active设置环境，若在开发环境下测试则设为dev，若打包上线则改成web后打包
 py:
-  module: "predict.py"
-  function: "predicting" #暂未使用
-  params: ""
+  module:
+    lyn: "predict.py"
+    tlr4: "use.py"
+    function: "predicting" #暂未使用
+    params: ""
 #  params: "--predict_path test.csv  --model_path model_save/model.pt  --result_path result_CDK9.csv"
 # 执行的py脚本参数，py脚本放在静态目录private文件夹后打包
 server:

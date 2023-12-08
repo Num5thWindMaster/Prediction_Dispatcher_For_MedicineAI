@@ -16,7 +16,7 @@ public interface PredictService {
 
     String convertToCsv(String smiles);
 
-    UploadResponseBody getUploadedFile(MultipartFile file, HttpServletRequest request);
+    UploadResponseBody getUploadedFile(MultipartFile file, String task, HttpServletRequest request);
 
     PredictResponseBody getPrediction(String smile);
 

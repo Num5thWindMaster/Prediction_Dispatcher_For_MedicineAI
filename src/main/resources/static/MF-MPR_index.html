@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<html>
+<head>
+    <title>Use Our MF-MPR Model To Predict Your Component</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-color: #F5F5DC;
+            background-image: url("./pic/background.jpg");
+            color: #000; /* Black text color */
+        }
+
+        h2, h3 {
+            color: #007bff; /* Blue headers */
+        }
+
+        /* Center align all div elements */
+        div {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        /* File upload section */
+        #uploadForm, #dataInputForm {
+            margin: 20px;
+        }
+
+        #fileInput, #dataInput {
+            margin: 10px;
+        }
+
+        #submitButton, #uploadFormButton, #submitDataButton {
+            margin: 10px;
+            background-color: #007bff; /* Blue submit buttons */
+            color: #fff; /* White text color */
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #submitButton:disabled, #submitDataButton:disabled {
+            background-color: #b0cfff; /* Light blue disabled buttons */
+            cursor: not-allowed;
+        }
+
+        #resultContainer {
+            margin: 20px;
+            padding: 10px;
+            background-color: #fff; /* White result container background */
+            border-radius: 5px;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        /*#errorContainer {*/
+        /*    margin: 20px;*/
+        /*    padding: 10px;*/
+        /*    background-color: #ffc0cb; !* Light pink error container background *!*/
+        /*    border-radius: 5px;*/
+        /*}*/
+
+        #backToHome {
+            margin: 20px;
+            padding: 10px;
+            background-color: #007bff; /* Blue back to home button */
+            color: #fff; /* White text color */
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        /* Responsive layout for small screens */
+        @media screen and (max-width: 600px) {
+            #fileInput, #dataInput {
+                width: 80%;
+            }
+            #submitButton, #submitDataButton {
+                width: 80%;
+            }
+            #resultContainer, #errorContainer {
+                width: 90%;
+            }
+            #backToHome {
+                width: 90%;
+            }
+        }
+        .right-bottom-div {
+            position: absolute;
+            bottom: 10px; /* Distance from bottom edge */
+            right: 10px; /* Distance from right edge */
+            background-color: #336699; /* 蓝色背景，可根据需要更改颜色 */
+            color: #FFFFFF; /* White text color */
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #smilesInput, #sequenceInput {
+            width: 400px;
+            height: 30px;
+        }
+    </style>
+</head>
+<body>
+<h2 style="text-align: center">Predict for LYN target molecule</h2>
+<h3 style="text-align: center">Please upload csv file, with 1 column smiles sequence:</h3>
+<form id="uploadForm" enctype="multipart/form-data" style="text-align: center" onsubmit="uploadFile(event)">
+    <input type="file" name="file" class="file-input" id="fileInput" onchange="validateFileSelected()"/>
+    <input type="submit" value="Submit" id="submitButton" disabled>
+    <button type="button" id="uploadFormButton" onclick="clearFile()">Clear</button>
+</form>
+<div>
+    <h3>or, please input a SMILES sequence: </h3>
+    <input type="text" id="smilesInput" placeholder="Enter SMILES here">
+    <!--    <input type="text" id="sequenceInput" placeholder="Enter target sequence here, default Lyn">-->
+    <button type="button" id="submitDataButton" onclick="submitData()">Submit Data</button>
+</div>
+<div>
+    <h2 style="text-align: center">Prediction Result</h2>
+    <div id="resultContainer">
+        <!-- Placeholder for displaying prediction result -->
+    </div>
+    <!--    <div id="errorContainer">-->
+    <!--        &lt;!&ndash; Placeholder for displaying error message &ndash;&gt;-->
+    <!--    </div>-->
+</div>
+<div>
+    <button class="right-bottom-div" id="backToHome" onclick="redirectToHome()" >Back to Home</button>
+</div>
+<script>
+
+    function validateFileSelected() {
+        var fileInput = document.getElementById('fileInput');
+        var submitButton = document.getElementById('submitButton');
+
+        // Check if a file is selected
+        if (fileInput.files.length > 0) {
+            submitButton.disabled = false; // Enable the submit button
+        } else {
+            submitButton.disabled = true; // Disable the submit button
+        }
+    }
+
+    function clearFile() {
+        var fileInput = document.getElementById('fileInput');
+        fileInput.value = ''; // Clear the selected file
+        validateFileSelected(); // Update the submit button state
+    }
+
+    function updateResultContainer(data, status) {
+        var resultContainer = document.getElementById('resultContainer');
+        var resultTextBox = document.getElementById('resultTextBox');
+
+        if (!resultTextBox) {
+            // If resultTextBox doesn't exist, create a new one
+            resultTextBox = document.createElement('textarea');
+            resultTextBox.id = 'resultTextBox';
+            resultTextBox.rows = 5;
+            resultTextBox.cols = 50;
+            resultContainer.appendChild(resultTextBox);
+        }
+        if (status.length === 0) {
+            if (data.code === 200) {
+                // Show result in the text box
+                // resultTextBox.innerHTML = JSON.stringify(data.result);
+                let resultInfo = "";
+
+                for (let i = 0; i < data.result.length; i++) {
+                    const resultItem = data.result[i];
+                    resultInfo += `Pair ${i + 1}:\n`;
+                    resultInfo += `Score: ${resultItem.probability}\n`;
+                    resultInfo += `Smiles: ${resultItem.smiles}\n`;
+                    resultInfo += `Target: ${resultItem.targetName}\n\n`;
+                }
+
+                resultTextBox.innerHTML = resultInfo + `Time: ${timestampToLocalTime(data.timestamp)}`;
+                // resultTextBox.innerHTML = `Probability: ${JSON.stringify(data.result[0].probability)}\nSmiles: ${JSON.stringify(data.result[0].smiles)}\ntarget sequence: ${JSON.stringify(data.result[0].sequence)}\nTime: ${timestampToLocalTime(data.timestamp)}`;
+            } else {
+                // Show error message
+                resultTextBox.innerHTML = `Error: ${data.message} (Error code: ${data.code})\nTime: ${timestampToLocalTime(data.timestamp)}`;
+            }
+        }else if(data.length === 0) {
+            resultTextBox.innerText = 'Please wait for few seconds...'
+        }
+    }
+
+    function uploadFile(event) {
+        event.preventDefault(); // Prevent the default form submission
+        updateResultContainer('', '1');
+        var fileInput = document.getElementById('fileInput');
+        var file = fileInput.files[0];
+
+        // Check if a file is selected
+        if (!file) {
+            alert('Please select a file.');
+            return;
+        }
+
+        // Check file extension
+        var allowedExtensions = ['.csv'];
+        var fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        if (!allowedExtensions.includes(fileExtension)) {
+            alert('Only .csv files are allowed.');
+            return;
+        }
+
+        // Check file size
+        var maxSizeInBytes = 1024; // 1KB (in bytes)
+        if (file.size > maxSizeInBytes) {
+            alert('File size exceeds the maximum limit (1KB).');
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('file', file);
+        formData.append('task', 'LYN');
+
+        // Replace the URL below with your backend endpoint for file upload
+        var uploadURL = './request/upload';
+
+        fetch(uploadURL, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                updateResultContainer(data, '');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    function redirectToHome() {
+        // Replace with your home page URL
+        window.location.href = "/";
+    }
+    function submitData() {
+        var smilesInput = document.getElementById('smilesInput');
+        // var sequenceInput = document.getElementById('sequenceInput');
+        var smiles = smilesInput.value.trim();
+        // var sequence = sequenceInput.value.trim();
+
+        // Check if data is not empty
+        // if (!smiles || !sequence) {
+        if (!smiles) {
+            alert('Please enter SMILES sequence.');
+            return;
+        }
+
+        // Check data length
+        var maxSMILESSizeInBytes = 1024; // 1KB (in bytes)
+        // var maxSequenceSizeInBytes = 10240; //10KB (in bytes)
+        // if (new Blob([smiles]).size > maxSMILESSizeInBytes || new Blob([sequence]).size > maxSequenceSizeInBytes) {
+        if (new Blob([smiles]).size > maxSMILESSizeInBytes) {
+            alert('Data size exceeds the maximum limit (1KB).');
+            return;
+        }
+        updateResultContainer('', '1');
+        // Replace the URL below with your backend endpoint for data submission
+        var submitURL = './request/submit';
+
+        // Use GET request to send data
+        // fetch(`${submitURL}?smiles=${encodeURIComponent(smiles)}&sequence=${encodeURIComponent(sequence)}`)
+        fetch(`${submitURL}?smiles=${encodeURIComponent(smiles)}&task=LYN`)
+            .then(response => response.json())
+            .then(data => {
+                updateResultContainer(data, '');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    function timestampToLocalTime(timestamp) {
+        const dateObj = new Date(timestamp);
+        const options = {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false, // Use 24-hour format
+        };
+
+        return dateObj.toLocaleString('zh-CN', options);
+    }
+
+    var submitButton = document.getElementById('submitButton');
+    submitButton.addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+        uploadFile(event);
+    });
+</script>
+</body>
+</html>
