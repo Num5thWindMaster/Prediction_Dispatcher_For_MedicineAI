@@ -1,8 +1,10 @@
 spring:
   profiles:
     active: web
-  config:
-    name:
+  mvc:
+    error:
+      whitelabel:
+        enabled: false
 # active设置环境，若在开发环境下测试则设为dev，若打包上线则改成web后打包
 py:
   module:
