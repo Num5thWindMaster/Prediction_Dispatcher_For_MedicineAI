@@ -2,4 +2,5 @@ file:
   uploadFolder: \output\uploaded_data\csv #上传文件被记录在项目目录中的dev文件夹下
   MF_MPRFolder: src\main\resources\private\MF-MPR #python文件被记录在项目resources/private目录下
   AIGO_DTIFolder: src\main\resources\private\AIGO-DTI #python文件被记录在项目resources/private目录下
+  CalBase64: src\main\resources\private\smile2base64.py
   model_pt: Src_model.pt

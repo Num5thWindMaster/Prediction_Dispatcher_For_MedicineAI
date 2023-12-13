@@ -1,9 +1,11 @@
 package com.lovemyhome.medicine_ai.dldispatcher.service;// -*- coding: utf-8 -*-
 import com.lovemyhome.medicine_ai.dldispatcher.api.PredictService;
+import com.lovemyhome.medicine_ai.dldispatcher.commons.request.DTIPredictionRequestBody;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.DTIPredictionResult;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.SysRetCodeConstants;
-import com.lovemyhome.medicine_ai.dldispatcher.dao.PredictResponseBody;
-import com.lovemyhome.medicine_ai.dldispatcher.dao.UploadResponseBody;
+import com.lovemyhome.medicine_ai.dldispatcher.response.MultiViewResponse;
+import com.lovemyhome.medicine_ai.dldispatcher.response.PredictResponseBody;
+import com.lovemyhome.medicine_ai.dldispatcher.response.UploadResponseBody;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -20,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.openscience.cdk.smiles.SmilesParser;
@@ -49,6 +52,8 @@ public class PredictServiceImpl implements PredictService {
 //    private String pyFunc;
     @Value("${py.module.params}")
     private String pyParams;
+    @Value("${file.CalBase64}")
+    private String calBase64;
     @Value("${file.model_pt}")
     private String modelPt;
 
@@ -226,7 +231,7 @@ public class PredictServiceImpl implements PredictService {
         PredictResponseBody responseBody = new PredictResponseBody();
         if (null == smiles || !isValidSmiles(smiles)) {
             responseBody.setCode(SysRetCodeConstants.REQUEST_FORMAT_ILLEGAL.getCode());
-            responseBody.setMsg("不是有效的Smiles数据");
+            responseBody.setMsg("Invalid Smiles");
             return responseBody;
         }
         //上面为Smiles有效性检测
@@ -321,7 +326,18 @@ public class PredictServiceImpl implements PredictService {
         switch (pyScriptType) {
             case "LYN":
                 pythonScriptPath = MF_MPRFolder + File.separator + MF_MPRModule;
-                command = "python " + pythonScriptPath + " " + pyParams + " --predict_path " + path + " --model_path " + MF_MPRFolder + File.separator + modelPt;
+                StringBuilder sb = new StringBuilder();
+                command = sb.append("python ")
+                        .append(pythonScriptPath)
+                        .append(" ")
+                        .append(pyParams)
+                        .append(" --predict_path ")
+                        .append(path)
+                        .append(" --model_path ")
+                        .append(MF_MPRFolder)
+                        .append(File.separator)
+                        .append(modelPt)
+                        .toString();
                 LOGGER.log(Level.WARNING, "command: " + command);
                 try {
                     // Construct the command to execute the Python script
@@ -367,7 +383,13 @@ public class PredictServiceImpl implements PredictService {
 
             case "TLR4":
                 pythonScriptPath = AIGO_DTIFolder + File.separator + AIGO_DTIModule;
-                command = "python " + pythonScriptPath + " " + pyParams + " --test_path " + path;
+                StringBuilder sb2 = new StringBuilder();
+                command = sb2.append("python ")
+                        .append(pythonScriptPath)
+                        .append(" ")
+                        .append(pyParams)
+                        .append(" --test_path ")
+                        .append(path).toString();
                 try {
                     // Construct the command to execute the Python script
                     // Execute the command
@@ -414,70 +436,58 @@ public class PredictServiceImpl implements PredictService {
         }
             return responseList;
     }
+
+    @Override
+    public List<MultiViewResponse> getDTIPredictionByMultitask(DTIPredictionRequestBody requestBody, HttpServletRequest request) {
+        //smile数据源验证
+        if ("smiles".equals(requestBody.getOption_datasource()) && (requestBody.getInputsmiles() == null || "".equals(requestBody.getInputsmiles()))){
+            return null;
+        }
+
+        if ("csv".equals(requestBody.getOption_datasource()) && (requestBody.getFile() == null || requestBody.getFile().getSize() == 0)) {
+            return null;
+        }
+        if ("jsme".equals(requestBody.getOption_datasource()) && (requestBody.getJsmeSmile() == null || "".equals(requestBody.getJsmeSmile()))) {
+            return null;
+        }
+        List<DTIPredictionResult> resultList = null;
+        List<MultiViewResponse> responseList = new ArrayList<>();
+        switch(requestBody.getOption_datasource()) {
+            case "csv":
+                UploadResponseBody uploadedFile = getUploadedFile(requestBody.getFile(), requestBody.getForm_check_target().get(0), request);
+                if (!Objects.equals(uploadedFile.getCode(), "000000")) {
+                    return null;
+                }
+                String path = uploadedFile.getPath().toString();
+                resultList = getDTIPrediction(path, requestBody.getForm_check_target().get(0));
+                break;
+            case "jsme":
+                requestBody.setInputsmiles(requestBody.getJsmeSmile());
+            case "smiles":
+                resultList = getDTIPrediction(requestBody.getInputsmiles(), "default", requestBody.getForm_check_target().get(0));
+                break;
+        }
+        for (int i = 0; i < resultList.size(); i++) {
+            DTIPredictionResult predictionResult = resultList.get(i);
+            StringBuilder sb = new StringBuilder();
+            String command = sb.append("python ")
+                    .append(calBase64).append(" ").append(resultList.get(i).getSmiles()).toString();
+//        LOGGER.log(Level.WARNING, "command: " + command);
+            try {
+                Process process = Runtime.getRuntime().exec(command);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                // Read the output of the Python script
+                String line = reader.readLine();
+                sb = new StringBuilder();
+                String base64 = sb.append("data:image/svg+xml;base64,").append(line).toString();
+                MultiViewResponse multiViewResponse = new MultiViewResponse(i + 1, base64, predictionResult.getProbability());
+                responseList.add(multiViewResponse);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+
+        return responseList;
+    }
 }
 
-//    @Override
-//    public PredictResponseBody getPrediction(String pythonScriptPath, String inputParameter) {
-//        List<DTIPredictionResult> responseList = new ArrayList<>();
-//
-//        try {
-//            // Construct the command to execute the Python script
-//            String command = "python3 " + pythonScriptPath + " " + pyParams;
-//
-//            // Execute the command
-//            Process process = Runtime.getRuntime().exec(command);
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-//
-//            // Read the output of the Python script
-//            String line;
-////            StringBuilder output = new StringBuilder();
-//            while ((line = reader.readLine()) != null) {
-////                PredictResponseBody responseItem = new PredictResponseBody(line);
-//                String[] row = line.split(",");
-//                DTIPredictionResult result = new DTIPredictionResult(row[0], row[1], row[2]);
-//                responseList.add(result);
-//            }
-//            // Wait for the process to finish
-//            process.waitFor();
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        return new PredictResponseBody();
-//    }
-//
-//}
-
-//class PythonRunner {
-//
-//    public String runPythonFunction(String functionName, String... args) {
-//        try {
-//            // 构建Python命令，调用hello.py中的greet函数，并传递参数
-//            ProcessBuilder pb = new ProcessBuilder("python", "hello.py", functionName, String.join(",", args));
-//            pb.redirectErrorStream(true);
-//
-//            // 启动进程
-//            Process process = pb.start();
-//
-//            // 读取Python函数的输出
-//            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-//            String line;
-//            StringBuilder output = new StringBuilder();
-//            while ((line = reader.readLine()) != null) {
-//                output.append(line);
-//            }
-//
-//            // 等待进程执行结束
-//            int exitCode = process.waitFor();
-//            if (exitCode == 0) {
-//                return output.toString();
-//            } else {
-//                return "Error: Python process returned non-zero exit code.";
-//            }
-//        } catch (IOException | InterruptedException e) {
-//            e.printStackTrace();
-//            return "Error: Exception occurred while running Python function.";
-//        }
-//    }
-//}

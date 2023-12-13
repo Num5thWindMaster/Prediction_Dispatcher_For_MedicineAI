@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.lovemyhome.medicine_ai</groupId>
     <artifactId>Prediction_Dispatcher_For_MedicineAI</artifactId>
-    <version>1.3.0</version>
+    <version>1.9.9-SNAPSHOT</version>
     <packaging>war</packaging>
     <name>DlDispatcher</name>
     <description>DlDispatcher</description>
@@ -77,18 +77,33 @@
         <dependency>
             <groupId>org.openscience.cdk</groupId>
             <artifactId>cdk-smiles</artifactId>
-            <version>2.8</version>
+            <version>2.9</version>
         </dependency>
         <dependency>
             <groupId>org.openscience.cdk</groupId>
             <artifactId>cdk-interfaces</artifactId>
-            <version>2.8</version>
+            <version>2.9</version>
         </dependency>
         <dependency>
             <groupId>org.openscience.cdk</groupId>
             <artifactId>cdk-data</artifactId>
-            <version>2.8</version>
+            <version>2.9</version>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.rdkit</groupId>-->
+<!--            <artifactId>rdkit</artifactId>-->
+<!--            <version>2022.03.4</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>com.actelion.research</groupId>-->
+<!--            <artifactId>openchemlib</artifactId>-->
+<!--            <version>2023.12.1</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>io.cordite</groupId>-->
+<!--            <artifactId>dgl-cordapp</artifactId>-->
+<!--            <version>0.5.3</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.mozilla.javascript</groupId>
             <artifactId>com.springsource.org.mozilla.javascript</artifactId>

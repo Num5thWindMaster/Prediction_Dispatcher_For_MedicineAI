@@ -1,0 +1,10 @@
+.table th,
+.table td {
+    vertical-align: middle;
+    border-top: none;
+}
+
+.table thead th {
+    vertical-align: middle;
+    border-bottom: none;
+}
