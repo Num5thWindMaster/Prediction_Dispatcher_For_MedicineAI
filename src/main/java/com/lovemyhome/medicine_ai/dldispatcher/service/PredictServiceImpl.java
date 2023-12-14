@@ -1,5 +1,6 @@
 package com.lovemyhome.medicine_ai.dldispatcher.service;// -*- coding: utf-8 -*-
 import com.lovemyhome.medicine_ai.dldispatcher.api.PredictService;
+import com.lovemyhome.medicine_ai.dldispatcher.commons.Utils;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.request.DTIPredictionRequestBody;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.DTIPredictionResult;
 import com.lovemyhome.medicine_ai.dldispatcher.commons.result.SysRetCodeConstants;
@@ -52,8 +53,8 @@ public class PredictServiceImpl implements PredictService {
 //    private String pyFunc;
     @Value("${py.module.params}")
     private String pyParams;
-    @Value("${file.CalBase64}")
-    private String calBase64;
+//    @Value("${file.CalBase64}")
+//    private String calBase64;
     @Value("${file.model_pt}")
     private String modelPt;
 
@@ -470,21 +471,21 @@ public class PredictServiceImpl implements PredictService {
         for (int i = 0; i < resultList.size(); i++) {
             DTIPredictionResult predictionResult = resultList.get(i);
             StringBuilder sb = new StringBuilder();
-            String command = sb.append("python ")
-                    .append(calBase64).append(" ").append(resultList.get(i).getSmiles()).toString();
-//        LOGGER.log(Level.WARNING, "command: " + command);
-            try {
-                Process process = Runtime.getRuntime().exec(command);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                // Read the output of the Python script
-                String line = reader.readLine();
-                sb = new StringBuilder();
-                String base64 = sb.append("data:image/svg+xml;base64,").append(line).toString();
+//            String command = sb.append("python ")
+//                    .append(calBase64).append(" ").append(resultList.get(i).getSmiles()).toString();
+////        LOGGER.log(Level.WARNING, "command: " + command);
+//            try {
+//                Process process = Runtime.getRuntime().exec(command);
+//                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+//                // Read the output of the Python script
+//                String line = reader.readLine();
+//                sb = new StringBuilder();
+                String base64 = sb.append("data:image/svg+xml;base64,").append(Utils.getBase64(resultList.get(i).getSmiles())).toString();
                 MultiViewResponse multiViewResponse = new MultiViewResponse(i + 1, base64, predictionResult.getProbability());
                 responseList.add(multiViewResponse);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
+//            }catch (Exception e){
+//                e.printStackTrace();
+//            }
         }
 
         return responseList;

@@ -2,6 +2,6 @@ file:
   uploadFolder: /work/web/upload #上传文件被映射到Ubuntu系统的 /var/cache/tomcat9/web目录下（沙盒机制）
   MF_MPRFolder: /opt/tomcat/webapps/Prediction_Dispatcher_For_MedicineAI/WEB-INF/classes/private/MF-MPR
   AIGO_DTIFolder: /opt/tomcat/webapps/Prediction_Dispatcher_For_MedicineAI/WEB-INF/classes/private/AIGO-DTI
-  CalBase64: /opt/tomcat/webapps/Prediction_Dispatcher_For_MedicineAI/WEB-INF/classes/private/smile2base64.py
+#  CalBase64: /opt/tomcat/webapps/Prediction_Dispatcher_For_MedicineAI/WEB-INF/classes/private/smile2base64.py
   model_pt: Src_model.pt
   #web中仅使用，不建议上传或修改

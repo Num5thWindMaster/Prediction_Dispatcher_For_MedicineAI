@@ -2,5 +2,5 @@ file:
   uploadFolder: \private\python\csv #上传文件被记录在项目目录中的dev文件夹下
   MF_MPRFolder: D:\Programs\apache-tomcat-9.0.78\webapps\Prediction_Dispatcher_For_MedicineAI\WEB-INF\classes\private\MF-MPR #python文件被记录在项目resources/private目录下
   AIGO_DTIFolder: D:\Programs\apache-tomcat-9.0.78\webapps\Prediction_Dispatcher_For_MedicineAI\WEB-INF\classes\private\AIGO-DTI
-  CalBase64: D:\Programs\apache-tomcat-9.0.78\webapps\Prediction_Dispatcher_For_MedicineAI\WEB-INF\classes\private\smile2base64.py
+#  CalBase64: D:\Programs\apache-tomcat-9.0.78\webapps\Prediction_Dispatcher_For_MedicineAI\WEB-INF\classes\private\smile2base64.py
   model_pt: Src_model.pt

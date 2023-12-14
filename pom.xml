@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.lovemyhome.medicine_ai</groupId>
     <artifactId>Prediction_Dispatcher_For_MedicineAI</artifactId>
-    <version>1.9.9-SNAPSHOT</version>
+    <version>2.0.0</version>
     <packaging>war</packaging>
     <name>DlDispatcher</name>
     <description>DlDispatcher</description>
@@ -76,17 +76,7 @@
         </dependency>
         <dependency>
             <groupId>org.openscience.cdk</groupId>
-            <artifactId>cdk-smiles</artifactId>
-            <version>2.9</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openscience.cdk</groupId>
-            <artifactId>cdk-interfaces</artifactId>
-            <version>2.9</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openscience.cdk</groupId>
-            <artifactId>cdk-data</artifactId>
+            <artifactId>cdk-bundle</artifactId>
             <version>2.9</version>
         </dependency>
 <!--        <dependency>-->
